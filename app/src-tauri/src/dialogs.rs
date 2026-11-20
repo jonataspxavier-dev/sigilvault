@@ -8,6 +8,19 @@ use std::path::{Path, PathBuf};
 use tauri::WebviewWindow;
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
 
+/// Só em builds de depuração: `SIGILVAULT_TEST_DIALOG=<arquivo de controle>` faz as confirmações
+/// responderem "sim" e os diálogos de arquivo devolverem o caminho escrito nesse arquivo (para
+/// testes automáticos). Em release, esta função nem existe.
+/// Debug builds only: `SIGILVAULT_TEST_DIALOG=<control file>` makes confirmations answer "yes" and
+/// file dialogs return the path written in that file (for automated tests). In release this
+/// function does not exist.
+#[cfg(debug_assertions)]
+fn test_answer() -> Option<PathBuf> {
+    let control = std::env::var_os("SIGILVAULT_TEST_DIALOG")?;
+    let path = std::fs::read_to_string(control).ok()?;
+    Some(PathBuf::from(path.trim()))
+}
+
 /// Texto no idioma escolhido. / Text in the chosen language.
 pub fn tr(lang: &str, pt: &str, en: &str) -> String {
     if lang == "en" { en } else { pt }.to_owned()
@@ -16,6 +29,10 @@ pub fn tr(lang: &str, pt: &str, en: &str) -> String {
 /// Pergunta de confirmação com aviso. Devolve `true` se o usuário confirmou.
 /// Confirmation question with a warning. Returns `true` if the user confirmed.
 pub fn confirm(window: &WebviewWindow, lang: &str, title: &str, text: &str, ok: &str) -> bool {
+    #[cfg(debug_assertions)]
+    if test_answer().is_some() {
+        return true;
+    }
     window
         .dialog()
         .message(text)
@@ -28,6 +45,10 @@ pub fn confirm(window: &WebviewWindow, lang: &str, title: &str, text: &str, ok: 
 
 /// "Salvar como". / "Save as".
 pub fn save_path(window: &WebviewWindow, title: &str, file_name: &str, filter: (&str, &[&str])) -> Option<PathBuf> {
+    #[cfg(debug_assertions)]
+    if let Some(p) = test_answer() {
+        return Some(p);
+    }
     window
         .dialog()
         .file()
@@ -42,6 +63,10 @@ pub fn save_path(window: &WebviewWindow, title: &str, file_name: &str, filter: (
 
 /// "Abrir". / "Open".
 pub fn pick_path(window: &WebviewWindow, title: &str, filters: &[(&str, &[&str])]) -> Option<PathBuf> {
+    #[cfg(debug_assertions)]
+    if let Some(p) = test_answer() {
+        return Some(p);
+    }
     let mut builder = window.dialog().file().set_parent(window).set_title(title);
     for (name, ext) in filters {
         builder = builder.add_filter(*name, ext);
