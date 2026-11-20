@@ -8,7 +8,7 @@
 
 **SigilVault** é um gerenciador de senhas **local** para Windows. Ele guarda tudo criptografado no próprio computador, preenche senhas no navegador e em apps desktop e gera senhas fortes. Nada vai para a nuvem, a menos que você escolha.
 
-> Status: **Fase 3 concluída**: núcleo, app desktop e exportação, importação e backups prontos. Próximo passo: a extensão do navegador.
+> Status: **Fase 4 concluída**: núcleo, app desktop, exportação e importação, e a extensão do navegador pareada com o app. Próximo passo: preencher logins no navegador.
 
 ### Visão geral
 
@@ -30,6 +30,9 @@ Apps desktop ◄──────────── Auto-Type (atalho) ──�
 | [`core/`](core/) | Núcleo em Rust: cofre, criptografia, slots de chave, códigos de recuperação e gerador. É o **único** componente que descriptografa. |
 | [`app/`](app/) | App desktop em Tauri 2 + TypeScript (Fase 2). |
 | [`extension/`](extension/) | Extensão WebExtensions MV3 para Chrome, Brave, Opera e Firefox (Fase 4). |
+| [`crates/pairing/`](crates/pairing/) | Pareamento OPAQUE e canal criptografado, usado pelo app e (em WebAssembly) pela extensão. |
+| [`crates/ipc/`](crates/ipc/) | Pipe protegido entre o app e o host, e verificação do executável do outro lado (caminho e Authenticode). |
+| [`crates/native-host/`](crates/native-host/) | `sigilvault-host.exe`: o programa que o navegador abre; só repassa mensagens criptografadas. |
 | [`docs/`](docs/) | [Planejamento completo](docs/PLANEJAMENTO.md). |
 
 ### Modelo de segurança
@@ -41,6 +44,7 @@ Apps desktop ◄──────────── Auto-Type (atalho) ──�
 - **Aleatoriedade:** sempre o gerador seguro do sistema operacional.
 - **Bibliotecas:** apenas as auditadas do ecossistema RustCrypto. Nada de criptografia própria.
 - **Protege contra:** roubo do PC ou do disco, vazamento do arquivo ou do backup, phishing e vazamento de nuvem.
+- **Extensão ↔ app:** Native Messaging (sem porta de rede) → `sigilvault-host.exe` → named pipe só do seu usuário. Cada lado confere o executável do outro. Pareamento OPAQUE com código mostrado no app; depois, canal AES-256-GCM por conexão. A extensão nunca guarda senhas.
 - **Não protege contra:** malware ou keylogger rodando enquanto o cofre está desbloqueado.
 
 ### Fases
@@ -48,8 +52,8 @@ Apps desktop ◄──────────── Auto-Type (atalho) ──�
 1. Núcleo em Rust + testes ✅
 2. App desktop (Tauri): criar e desbloquear o cofre, CRUD, gerador, bandeja e bloqueio automático ✅
 3. Exportar e importar, backups locais e importação de outros gerenciadores ✅
-4. **Extensão + Native Messaging com pareamento seguro** ← *próxima*
-5. Navegador completo: preencher, balão "gerar ou só salvar" e aviso de salvar
+4. Extensão + Native Messaging com pareamento seguro ✅
+5. **Navegador completo: preencher, balão "gerar ou só salvar" e aviso de salvar** ← *próxima*
 6. Desktop completo: atalhos globais, pop-up de busca e Auto-Type
 7. Endurecimento e lançamento: revisão de segurança, instalador assinado e lojas
 
@@ -58,6 +62,7 @@ Apps desktop ◄──────────── Auto-Type (atalho) ──�
 ```powershell
 cargo test --workspace          # testes do núcleo e do app (Rust)
 cd app; npm install; npm test   # testes da interface
+cd extension; npm install; npm test; npm run build   # extensão (veja extension/README.md)
 npx tauri dev                   # abre o app em modo de desenvolvimento
 ```
 
@@ -69,7 +74,7 @@ Requisitos: Rust estável (rustup), Node.js LTS e Visual Studio Build Tools com 
 
 **SigilVault** is a **local** password manager for Windows. It keeps everything encrypted on your own computer, fills passwords in the browser and in desktop apps, and generates strong passwords. Nothing goes to the cloud unless you choose so.
 
-> Status: **Phase 3 done**: core, desktop app, and export, import and backups are ready. Next: the browser extension.
+> Status: **Phase 4 done**: core, desktop app, export and import, and the browser extension paired with the app. Next: filling logins in the browser.
 
 ### Overview
 
@@ -91,6 +96,9 @@ Desktop apps ◄──────────── Auto-Type (hotkey) ── T
 | [`core/`](core/) | Rust core: vault, cryptography, key slots, recovery codes and generator. It is the **only** component that decrypts. |
 | [`app/`](app/) | Tauri 2 + TypeScript desktop app (Phase 2). |
 | [`extension/`](extension/) | MV3 WebExtension for Chrome, Brave, Opera and Firefox (Phase 4). |
+| [`crates/pairing/`](crates/pairing/) | OPAQUE pairing and encrypted channel, used by the app and (as WebAssembly) by the extension. |
+| [`crates/ipc/`](crates/ipc/) | Protected pipe between the app and the host, and checks of the executable on the other side (path and Authenticode). |
+| [`crates/native-host/`](crates/native-host/) | `sigilvault-host.exe`: the program the browser starts; it only relays encrypted messages. |
 | [`docs/`](docs/) | [Full plan (Portuguese)](docs/PLANEJAMENTO.md). |
 
 ### Security model
@@ -102,6 +110,7 @@ Desktop apps ◄──────────── Auto-Type (hotkey) ── T
 - **Randomness:** always the operating system's secure RNG.
 - **Libraries:** only audited RustCrypto crates. No home-made cryptography.
 - **Protects against:** stolen PC or disk, leaked file or backup, phishing and cloud leaks.
+- **Extension ↔ app:** Native Messaging (no network port) → `sigilvault-host.exe` → a named pipe for your user only. Each side checks the other's executable. OPAQUE pairing with a code shown in the app; then an AES-256-GCM channel per connection. The extension never stores passwords.
 - **Does not protect against:** malware or keyloggers running while the vault is unlocked.
 
 ### Phases
@@ -109,8 +118,8 @@ Desktop apps ◄──────────── Auto-Type (hotkey) ── T
 1. Rust core + tests ✅
 2. Desktop app (Tauri): create and unlock the vault, CRUD, generator, tray and auto-lock ✅
 3. Export and import, local backups and import from other managers ✅
-4. **Extension + Native Messaging with secure pairing** ← *next*
-5. Full browser support: fill, "generate or just save" popup and save prompt
+4. Extension + Native Messaging with secure pairing ✅
+5. **Full browser support: fill, "generate or just save" popup and save prompt** ← *next*
 6. Full desktop support: global hotkeys, search popup and Auto-Type
 7. Hardening and release: security review, signed installer and store publishing
 
@@ -119,6 +128,7 @@ Desktop apps ◄──────────── Auto-Type (hotkey) ── T
 ```powershell
 cargo test --workspace          # core and app tests (Rust)
 cd app; npm install; npm test   # UI tests
+cd extension; npm install; npm test; npm run build   # extension (see extension/README.md)
 npx tauri dev                   # opens the app in development mode
 ```
 
