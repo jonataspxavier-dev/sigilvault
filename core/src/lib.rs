@@ -7,5 +7,6 @@ pub mod crypto;
 pub mod error;
 pub mod generator;
 mod hex;
+pub mod recovery;
 
 pub use error::{Error, Result};
