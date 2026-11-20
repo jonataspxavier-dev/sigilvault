@@ -16,6 +16,11 @@ use crate::win::dpapi;
 
 /// Rótulo DPAPI só destes dados. / DPAPI label only for this data.
 const LABEL: &[u8] = b"SigilVault pairing keys v1";
+/// Rótulo DPAPI da lista de sites permitidos (os sites visitados também são privados).
+/// DPAPI label of the allowed sites list (visited sites are private too).
+const SITES_LABEL: &[u8] = b"SigilVault allowed sites v1";
+/// Limite de sites permitidos por pareamento. / Allowed sites limit per pairing.
+pub const MAX_SITES: usize = 500;
 /// Limite de pareamentos (evita crescer sem fim). / Pairing limit (avoids endless growth).
 pub const MAX_PAIRINGS: usize = 20;
 
@@ -29,6 +34,10 @@ struct Stored {
     last_seen: u64,
     /// Chave protegida pela DPAPI, em hexadecimal. / DPAPI-protected key, in hex.
     key: String,
+    /// Sites onde o preenchimento foi permitido para sempre (lista JSON protegida pela DPAPI, em hex).
+    /// Sites where filling was allowed for good (DPAPI-protected JSON list, in hex).
+    #[serde(default)]
+    sites: String,
 }
 
 /// Um pareamento. / A pairing.
@@ -41,6 +50,8 @@ pub struct Pairing {
     pub created_at: u64,
     pub last_seen: u64,
     pub key: Zeroizing<[u8; 32]>,
+    /// Origens (canônicas) liberadas para preencher sem perguntar. / Origins (canonical) allowed to fill without asking.
+    pub sites: Vec<String>,
 }
 
 pub fn now_secs() -> u64 {
@@ -64,7 +75,20 @@ impl Pairings {
                 let id: [u8; 16] = hex::decode(&s.id)?.try_into().ok()?;
                 let opened = Zeroizing::new(dpapi::unprotect_labeled(&hex::decode(&s.key)?, LABEL)?);
                 let key: [u8; 32] = opened.as_slice().try_into().ok()?;
-                Some(Pairing { id, caller: s.caller, browser: s.browser, created_at: s.created_at, last_seen: s.last_seen, key: Zeroizing::new(key) })
+                // Lista ilegível = nenhum site liberado (nunca o contrário). / Unreadable list = no site allowed (never the reverse).
+                let sites = hex::decode(&s.sites)
+                    .and_then(|b| dpapi::unprotect_labeled(&b, SITES_LABEL))
+                    .and_then(|b| serde_json::from_slice::<Vec<String>>(&b).ok())
+                    .unwrap_or_default();
+                Some(Pairing {
+                    id,
+                    caller: s.caller,
+                    browser: s.browser,
+                    created_at: s.created_at,
+                    last_seen: s.last_seen,
+                    key: Zeroizing::new(key),
+                    sites,
+                })
             })
             .take(MAX_PAIRINGS)
             .collect();
@@ -77,6 +101,8 @@ impl Pairings {
             .iter()
             .map(|p| {
                 let key = dpapi::protect_labeled(p.key.as_slice(), LABEL).ok_or_else(|| io::Error::other("DPAPI"))?;
+                let sites_json = serde_json::to_vec(&p.sites).map_err(io::Error::other)?;
+                let sites = dpapi::protect_labeled(&sites_json, SITES_LABEL).ok_or_else(|| io::Error::other("DPAPI"))?;
                 Ok(Stored {
                     id: hex::encode(&p.id),
                     caller: p.caller.clone(),
@@ -84,6 +110,7 @@ impl Pairings {
                     created_at: p.created_at,
                     last_seen: p.last_seen,
                     key: hex::encode(&key),
+                    sites: hex::encode(&sites),
                 })
             })
             .collect::<io::Result<Vec<_>>>()?;
@@ -126,6 +153,35 @@ impl Pairings {
         self.list.iter().find(|p| &p.id == id && p.caller == caller)
     }
 
+    /// O site já foi liberado para este pareamento? / Was the site already allowed for this pairing?
+    pub fn is_allowed(&self, id: &[u8; 16], origin: &str) -> bool {
+        self.list.iter().any(|p| &p.id == id && p.sites.iter().any(|s| s == origin))
+    }
+
+    /// Libera um site para sempre (até ser revogado). / Allows a site for good (until revoked).
+    pub fn allow_site(&mut self, id: &[u8; 16], origin: &str) -> io::Result<()> {
+        let Some(p) = self.list.iter_mut().find(|p| &p.id == id) else { return Ok(()) };
+        if p.sites.iter().any(|s| s == origin) {
+            return Ok(());
+        }
+        if p.sites.len() >= MAX_SITES {
+            p.sites.remove(0);
+        }
+        p.sites.push(origin.to_owned());
+        self.save()
+    }
+
+    /// Revoga um site. / Revokes a site.
+    pub fn revoke_site(&mut self, id: &[u8; 16], origin: &str) -> io::Result<bool> {
+        let Some(p) = self.list.iter_mut().find(|p| &p.id == id) else { return Ok(false) };
+        let before = p.sites.len();
+        p.sites.retain(|s| s != origin);
+        if p.sites.len() == before {
+            return Ok(false);
+        }
+        self.save().map(|_| true)
+    }
+
     /// Marca o último uso (gravado no máximo uma vez por hora). / Marks last use (saved at most hourly).
     pub fn touch(&mut self, id: &[u8; 16]) {
         let now = now_secs();
@@ -144,7 +200,7 @@ mod tests {
     use crate::storage::test_dir;
 
     fn pairing(n: u8, caller: &str) -> Pairing {
-        Pairing { id: [n; 16], caller: caller.into(), browser: "Chrome".into(), created_at: 1, last_seen: 1, key: Zeroizing::new([n; 32]) }
+        Pairing { id: [n; 16], caller: caller.into(), browser: "Chrome".into(), created_at: 1, last_seen: 1, key: Zeroizing::new([n; 32]), sites: Vec::new() }
     }
 
     #[test]
@@ -163,6 +219,27 @@ mod tests {
         assert_eq!(*p.find(&[1; 16], "chrome-extension://a/").unwrap().key, [1u8; 32]);
         // Mesmo id, outra origem: não serve. / Same id, other origin: no match.
         assert!(p.find(&[1; 16], "firefox:b").is_none());
+    }
+
+    #[test]
+    fn allowed_sites_are_private_and_per_pairing() {
+        let dir = test_dir("pairings-sites");
+        let path = dir.join("pairings.json");
+        let mut p = Pairings::load(&path);
+        p.add(pairing(1, "c")).unwrap();
+        p.add(pairing(2, "c")).unwrap();
+        p.allow_site(&[1; 16], "https://banco.example").unwrap();
+        p.allow_site(&[1; 16], "https://banco.example").unwrap();
+        // O site visitado não aparece em claro no arquivo. / The visited site does not appear in clear in the file.
+        assert!(!std::fs::read_to_string(&path).unwrap().contains("banco"));
+
+        let mut p = Pairings::load(&path);
+        assert!(p.is_allowed(&[1; 16], "https://banco.example"));
+        assert!(!p.is_allowed(&[2; 16], "https://banco.example"));
+        assert!(!p.is_allowed(&[1; 16], "http://banco.example"));
+        assert_eq!(p.list()[0].sites.len(), 1);
+        assert!(p.revoke_site(&[1; 16], "https://banco.example").unwrap());
+        assert!(!Pairings::load(&path).is_allowed(&[1; 16], "https://banco.example"));
     }
 
     #[test]

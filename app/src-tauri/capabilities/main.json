@@ -36,6 +36,9 @@
     "allow-cancel-pairing",
     "allow-list-pairings",
     "allow-remove-pairing",
+    "allow-revoke-site",
+    "allow-fill-log",
+    "allow-reveal-history",
     "core:event:allow-listen",
     "core:event:allow-unlisten"
   ]

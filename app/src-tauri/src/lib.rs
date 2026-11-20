@@ -106,6 +106,9 @@ pub fn run() {
             bridge::commands::cancel_pairing,
             bridge::commands::list_pairings,
             bridge::commands::remove_pairing,
+            bridge::commands::revoke_site,
+            bridge::commands::fill_log,
+            commands::reveal_history,
         ])
         .build(tauri::generate_context!())
         .expect("falha ao iniciar o SigilVault / failed to start SigilVault");

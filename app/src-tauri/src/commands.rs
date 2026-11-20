@@ -289,6 +289,8 @@ pub struct ItemDto {
     has_notes: bool,
     created_at: u64,
     updated_at: u64,
+    match_subdomains: bool,
+    history_len: usize,
 }
 
 impl From<&Item> for ItemDto {
@@ -304,6 +306,8 @@ impl From<&Item> for ItemDto {
             has_notes: i.has_notes(),
             created_at: i.created_at(),
             updated_at: i.updated_at(),
+            match_subdomains: i.match_subdomains(),
+            history_len: i.history_len(),
         }
     }
 }
@@ -321,6 +325,9 @@ pub struct ItemInput {
     tags: Vec<String>,
     password: Option<String>,
     notes: Option<String>,
+    #[zeroize(skip)]
+    #[serde(default)]
+    match_subdomains: bool,
 }
 
 fn parse_id(id: &str) -> CmdResult<ItemId> {
@@ -346,6 +353,7 @@ pub fn add_item(state: State<'_, AppState>, item: ItemInput) -> CmdResult<String
     new.tags.clone_from(&item.tags);
     new.password = item.password.clone().filter(|p| !p.is_empty());
     new.notes = item.notes.clone().filter(|n| !n.is_empty());
+    new.match_subdomains = item.match_subdomains;
     vault_ref(&inner)?;
     backup_before(&mut inner, &state, false);
     let id = vault_mut(&mut inner)?.add_item(new)?;
@@ -364,6 +372,7 @@ pub fn update_item(state: State<'_, AppState>, id: String, item: ItemInput) -> C
     up.tags.clone_from(&item.tags);
     up.password.clone_from(&item.password);
     up.notes.clone_from(&item.notes);
+    up.match_subdomains = item.match_subdomains;
     vault_ref(&inner)?;
     backup_before(&mut inner, &state, false);
     vault_mut(&mut inner)?.update_item(id, up)?;
@@ -385,6 +394,25 @@ pub fn reveal_password(state: State<'_, AppState>, id: String) -> CmdResult<Opti
     let id = parse_id(&id)?;
     let inner = state.lock();
     Ok(vault_ref(&inner)?.reveal_password(id)?.map(|p| p.to_string()))
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HistoryDto {
+    changed_at: u64,
+    password: String,
+}
+
+/// Senhas anteriores de um item (só quando o usuário pede). / An item's previous passwords (only when the user asks).
+#[tauri::command(async)]
+pub fn reveal_history(state: State<'_, AppState>, id: String) -> CmdResult<Vec<HistoryDto>> {
+    let id = parse_id(&id)?;
+    let inner = state.lock();
+    Ok(vault_ref(&inner)?
+        .reveal_history(id)?
+        .into_iter()
+        .map(|(changed_at, p)| HistoryDto { changed_at, password: p.to_string() })
+        .collect())
 }
 
 #[tauri::command(async)]

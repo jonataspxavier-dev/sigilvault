@@ -52,6 +52,8 @@ pub struct PairingDto {
     created_at: u64,
     last_seen: u64,
     connected: bool,
+    /// Sites liberados para preencher sem perguntar. / Sites allowed to fill without asking.
+    sites: Vec<String>,
 }
 
 /// Extensões pareadas. / Paired extensions.
@@ -69,6 +71,7 @@ pub fn list_pairings(state: State<'_, AppState>, bridge: State<'_, Bridge>) -> C
             created_at: p.created_at,
             last_seen: p.last_seen,
             connected: connected.contains(&p.id),
+            sites: p.sites.clone(),
         })
         .collect())
 }
@@ -80,4 +83,21 @@ pub fn remove_pairing(app: AppHandle, id: String) -> CmdResult<()> {
     let id: [u8; 16] = hex::decode(&id).and_then(|v| v.try_into().ok()).ok_or(CmdError::new("invalid_input"))?;
     super::remove_pairing(&app, &id)?;
     Ok(())
+}
+
+/// Revoga um site liberado: o próximo preenchimento nele volta a pedir confirmação.
+/// Revokes an allowed site: the next fill there asks for confirmation again.
+#[tauri::command]
+pub fn revoke_site(app: AppHandle, id: String, site: String) -> CmdResult<()> {
+    require_unlocked(&app.state::<AppState>())?;
+    let id: [u8; 16] = hex::decode(&id).and_then(|v| v.try_into().ok()).ok_or(CmdError::new("invalid_input"))?;
+    app.state::<Bridge>().lock().pairings.revoke_site(&id, &site)?;
+    Ok(())
+}
+
+/// Registro dos preenchimentos, do mais novo para o mais antigo. / Fill log, newest first.
+#[tauri::command]
+pub fn fill_log(state: State<'_, AppState>, bridge: State<'_, Bridge>) -> CmdResult<Vec<super::log::FillEntry>> {
+    require_unlocked(&state)?;
+    Ok(bridge.lock().log.newest_first())
 }

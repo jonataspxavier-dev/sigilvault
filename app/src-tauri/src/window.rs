@@ -12,7 +12,8 @@ use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder}
 const PREFIX: &str = "main-";
 static COUNTER: AtomicU32 = AtomicU32::new(0);
 
-fn current(app: &AppHandle) -> Option<WebviewWindow> {
+/// A janela aberta agora, se houver. / The currently open window, if any.
+pub fn current(app: &AppHandle) -> Option<WebviewWindow> {
     app.webview_windows().into_iter().find(|(label, _)| label.starts_with(PREFIX)).map(|(_, w)| w)
 }
 

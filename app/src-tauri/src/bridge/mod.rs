@@ -12,6 +12,8 @@
 //!    confirmation; then an encrypted channel per connection.
 
 pub mod commands;
+mod fill;
+mod log;
 mod pairings;
 mod session;
 
@@ -27,6 +29,7 @@ use zeroize::Zeroizing;
 
 pub use pairings::Pairings;
 use pairings::{Pairing, now_secs};
+use log::FillLog;
 use session::Conn;
 
 use crate::state::AppState;
@@ -66,6 +69,7 @@ struct Pending {
 
 struct BridgeInner {
     pairings: Pairings,
+    log: FillLog,
     pending: Option<Pending>,
     conns: Vec<Weak<Conn>>,
     last_pair_start: Option<Instant>,
@@ -81,7 +85,13 @@ pub struct Bridge {
 impl Bridge {
     pub fn new(paths: &Paths) -> Self {
         Self {
-            inner: Mutex::new(BridgeInner { pairings: Pairings::load(&paths.pairings), pending: None, conns: Vec::new(), last_pair_start: None }),
+            inner: Mutex::new(BridgeInner {
+                pairings: Pairings::load(&paths.pairings),
+                log: FillLog::load(&paths.fill_log),
+                pending: None,
+                conns: Vec::new(),
+                last_pair_start: None,
+            }),
             next_conn: AtomicU64::new(1),
             active: AtomicUsize::new(0),
         }
@@ -304,6 +314,7 @@ fn pair_login2(app: &AppHandle, conn: &Conn, finalization: &[u8]) -> Result<[u8;
         created_at: now,
         last_seen: now,
         key: Zeroizing::new(pairing_key(&session, &id)),
+        sites: Vec::new(),
     };
     let saved = b.pairings.add(pairing);
     drop(b);

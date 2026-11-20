@@ -9,8 +9,11 @@
 //! - `{"t":"auth","id":hex,"n":hex}` → `{"t":"auth","n":hex}` (abre o canal / opens the channel)
 //! - erros / errors: `{"t":"error","code":"…"}`
 //!
-//! Depois do `auth`, só `{"t":"box","c":hex}` (AES-256-GCM). Dentro: `{"op":"status"|"open_app"|"unpair","rid":n}`.
-//! After `auth`, only `{"t":"box","c":hex}` (AES-256-GCM). Inside: `{"op":…,"rid":n}`.
+//! Depois do `auth`, só `{"t":"box","c":hex}` (AES-256-GCM). Dentro: `{"op":…,"rid":n}`, com as
+//! operações `status`, `open_app`, `unpair` e as do navegador (`logins`, `fill`, `check_save`,
+//! `save`, `generate`, `get_generator`, `save_generator`, `strength`; veja `fill.rs`).
+//! After `auth`, only `{"t":"box","c":hex}` (AES-256-GCM). Inside: `{"op":…,"rid":n}`, with the
+//! operations `status`, `open_app`, `unpair` and the browser ones (see `fill.rs`).
 //! O app também envia avisos: `{"ev":"status",…}` e `{"ev":"unpaired"}`.
 //! The app also sends notices: `{"ev":"status",…}` and `{"ev":"unpaired"}`.
 
@@ -24,6 +27,7 @@ use sigilvault_ipc::{HOST_EXE, MAX_MESSAGE, allowed_caller, frame, process, sign
 use sigilvault_pairing::Channel;
 use tauri::AppHandle;
 
+use super::fill::{self, FillLimiter};
 use crate::window;
 
 /// Limite de mensagens por janela de tempo. / Message limit per time window.
@@ -44,6 +48,7 @@ pub struct Conn {
     pub caller: String,
     pipe: Pipe,
     out: Mutex<Out>,
+    fills: Mutex<FillLimiter>,
 }
 
 impl Conn {
@@ -87,6 +92,11 @@ impl Conn {
 
     pub fn pairing_id(&self) -> Option<[u8; 16]> {
         self.out().pairing
+    }
+
+    /// Ainda cabe mais um preenchimento neste minuto? / Is one more fill allowed this minute?
+    pub fn allow_fill(&self, per_minute: usize) -> bool {
+        self.fills.lock().unwrap_or_else(|e| e.into_inner()).allow(per_minute)
     }
 
     /// Encerra a conexão (destrava a leitura pendente). / Ends the connection (unblocks the pending read).
@@ -136,7 +146,7 @@ pub fn serve(app: &AppHandle, pipe: Pipe, id: u64) {
         return;
     }
 
-    let conn = Arc::new(Conn { id, caller, pipe, out: Mutex::new(Out { channel: None, pairing: None }) });
+    let conn = Arc::new(Conn { id, caller, pipe, out: Mutex::new(Out { channel: None, pairing: None }), fills: Mutex::new(FillLimiter::new()) });
     let mut window_start = Instant::now();
     let mut count = 0u32;
     while let Ok(Some(raw)) = frame::read(&conn.pipe, MAX_MESSAGE) {
@@ -225,6 +235,14 @@ fn handle_box(app: &AppHandle, conn: &Arc<Conn>, msg: &Value) -> bool {
             conn.send_box(&json!({ "rid": rid, "ok": ok }));
             return false;
         }
+        "logins" => fill::logins(app, &req),
+        "fill" => fill::fill(app, conn, &req),
+        "check_save" => fill::check_save(app, &req),
+        "save" => fill::save(app, &req),
+        "generate" => fill::generate(app, &req),
+        "get_generator" => fill::get_generator(app),
+        "save_generator" => fill::save_generator(app, &req),
+        "strength" => fill::strength(&req),
         _ => json!({ "error": "unknown_op" }),
     };
     reply["rid"] = rid;

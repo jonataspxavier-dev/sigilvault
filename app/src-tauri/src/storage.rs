@@ -24,6 +24,8 @@ pub struct Paths {
     pub backups: PathBuf,
     /// Extensões pareadas (chaves protegidas pela DPAPI). / Paired extensions (DPAPI-protected keys).
     pub pairings: PathBuf,
+    /// Registro dos preenchimentos (protegido pela DPAPI). / Fill log (DPAPI-protected).
+    pub fill_log: PathBuf,
 }
 
 impl Paths {
@@ -39,6 +41,7 @@ impl Paths {
             revision_guard: dir.join("revision.guard"),
             backups: dir.join("backups"),
             pairings: dir.join("pairings.json"),
+            fill_log: dir.join("fill-log.bin"),
         })
     }
 }

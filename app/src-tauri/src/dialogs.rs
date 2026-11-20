@@ -5,8 +5,8 @@
 
 use std::path::{Path, PathBuf};
 
-use tauri::WebviewWindow;
-use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
+use tauri::{AppHandle, WebviewWindow};
+use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind, MessageDialogResult};
 
 /// Só em builds de depuração: `SIGILVAULT_TEST_DIALOG=<arquivo de controle>` faz as confirmações
 /// responderem "sim" e os diálogos de arquivo devolverem o caminho escrito nesse arquivo (para
@@ -19,6 +19,60 @@ fn test_answer() -> Option<PathBuf> {
     let control = std::env::var_os("SIGILVAULT_TEST_DIALOG")?;
     let path = std::fs::read_to_string(control).ok()?;
     Some(PathBuf::from(path.trim()))
+}
+
+/// Só em depuração: o texto do arquivo de controle (para respostas como "always"/"once"/"cancel").
+/// Debug only: the control file's text (for answers like "always"/"once"/"cancel").
+#[cfg(debug_assertions)]
+fn test_text() -> Option<String> {
+    let control = std::env::var_os("SIGILVAULT_TEST_DIALOG")?;
+    std::fs::read_to_string(control).ok().map(|s| s.trim().to_owned())
+}
+
+/// Resposta ao pedido de preenchimento. / Answer to a fill request.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FillChoice {
+    /// Permitir sempre neste site (neste navegador). / Allow always on this site (in this browser).
+    Always,
+    /// Só desta vez. / Just this once.
+    Once,
+    Cancel,
+}
+
+/// Pergunta se a extensão pode preencher. Abre a janela do app para o diálogo não ficar escondido
+/// atrás do navegador. Com `allow_always = false` (formulário dentro de outro site), só há
+/// "desta vez". / Asks whether the extension may fill. Opens the app window so the dialog is not
+/// hidden behind the browser. With `allow_always = false` (form inside another site), only "this once".
+pub fn ask_fill(app: &AppHandle, lang: &str, text: &str, allow_always: bool) -> FillChoice {
+    #[cfg(debug_assertions)]
+    if let Some(answer) = test_text() {
+        return match answer.as_str() {
+            "always" if allow_always => FillChoice::Always,
+            "cancel" => FillChoice::Cancel,
+            _ => FillChoice::Once,
+        };
+    }
+    crate::window::open(app);
+    let always = tr(lang, "Permitir sempre neste site", "Always allow on this site");
+    let once = tr(lang, "Só desta vez", "Just this once");
+    let cancel = tr(lang, "Cancelar", "Cancel");
+    let mut builder = app.dialog().message(text).title(tr(lang, "SigilVault — preencher senha?", "SigilVault — fill password?")).kind(MessageDialogKind::Warning);
+    if let Some(w) = crate::window::current(app) {
+        builder = builder.parent(&w);
+    }
+    builder = if allow_always {
+        builder.buttons(MessageDialogButtons::YesNoCancelCustom(always.clone(), once.clone(), cancel))
+    } else {
+        builder.buttons(MessageDialogButtons::OkCancelCustom(once.clone(), cancel))
+    };
+    match builder.blocking_show_with_result() {
+        MessageDialogResult::Yes if allow_always => FillChoice::Always,
+        MessageDialogResult::Ok | MessageDialogResult::No => FillChoice::Once,
+        MessageDialogResult::Yes => FillChoice::Once,
+        MessageDialogResult::Custom(label) if allow_always && label == always => FillChoice::Always,
+        MessageDialogResult::Custom(label) if label == once => FillChoice::Once,
+        _ => FillChoice::Cancel,
+    }
 }
 
 /// Texto no idioma escolhido. / Text in the chosen language.
