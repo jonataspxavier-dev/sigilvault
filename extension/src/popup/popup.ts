@@ -117,5 +117,18 @@ function render(): void {
   );
 }
 
+// O segundo plano avisa as mudanças (cofre trancou, pareamento removido…).
+// The background announces changes (vault locked, pairing removed…).
+api.runtime.onMessage.addListener((msg, sender) => {
+  if (sender.id !== api.runtime.id || typeof msg !== "object" || msg === null) return;
+  const m = msg as { type?: unknown; view?: View };
+  if (m.type === "view" && m.view && !busy) {
+    // "Pareado!" só até a próxima mudança. / "Paired!" only until the next change.
+    justPaired = false;
+    view = m.view;
+    render();
+  }
+});
+
 render();
 void send("view");

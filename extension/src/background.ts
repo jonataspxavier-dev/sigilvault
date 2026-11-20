@@ -48,7 +48,12 @@ const controller = new Controller({
   pake: getPake,
   store: indexedDbStore,
   browserName: browserName(),
-  onChange: (view) => void showIcon(view),
+  onChange: (view) => {
+    void showIcon(view);
+    // Atualiza o popup, se estiver aberto (sem popup, ninguém ouve: erro ignorado).
+    // Updates the popup if open (with no popup nobody listens: error ignored).
+    api.runtime.sendMessage({ type: "view", view }).catch(() => undefined);
+  },
 });
 
 /** Só o nosso popup pode dar ordens (nenhuma página e nenhuma outra extensão).

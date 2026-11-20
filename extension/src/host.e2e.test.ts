@@ -193,7 +193,7 @@ describe("ponta a ponta com o app / end to end with the app", () => {
     await invoke("remove_pairing", { id: list[0]!.id });
     await waitFor(() => !c.getView().paired && !c2.getView().paired);
     expect(await store.load()).toBeNull();
-    expect(c.getView().error).toBe("pairing_removed");
+    expect(c.getView()).toMatchObject({ error: "pairing_removed", health: "ok" });
   });
 
   it("recusa uma extensão com outro ID / refuses an extension with another ID", async () => {

@@ -244,18 +244,21 @@ export class Controller {
     this.update({ locked: s.locked === true, username: typeof s.username === "string" ? s.username : null });
   }
 
+  /** Esquece o pareamento. A conexão é solta ANTES de cair, para a queda (pedida pelo app ou por
+   *  nós) não aparecer como falha. / Forgets the pairing. The connection is released BEFORE it
+   *  drops, so the drop (asked by the app or by us) does not show up as a failure. */
   private async forgetPairing(error: string | null): Promise<void> {
+    const link = this.link;
+    this.link = null;
+    link?.disconnect();
     await this.deps.store.clear();
     this.stored = null;
-    this.update({ paired: false, connected: false, locked: null, username: null, error });
+    this.update({ health: "ok", paired: false, connected: false, locked: null, username: null, pairing: "idle", error });
   }
 
   private async onEvent(ev: Msg): Promise<void> {
     if (ev.ev === "status") this.applyStatus(ev);
-    if (ev.ev === "unpaired") {
-      await this.forgetPairing("pairing_removed");
-      this.link?.disconnect();
-    }
+    if (ev.ev === "unpaired") await this.forgetPairing("pairing_removed");
   }
 
   /** Erro em claro vindo do app. / Plain error from the app. */
@@ -395,9 +398,12 @@ export class Controller {
   /** Desfaz o pareamento dos dois lados. / Undoes the pairing on both sides. */
   unpair(): Promise<View> {
     return this.serial(async () => {
-      if (this.link?.channel) await this.link.call("unpair").catch(() => undefined);
+      const link = this.link;
+      // O app apaga o pareamento e fecha a conexão; ignoramos essa queda. / The app deletes the pairing and closes the connection; we ignore that drop.
+      this.link = null;
+      if (link?.channel) await link.call("unpair").catch(() => undefined);
+      link?.disconnect();
       await this.forgetPairing(null);
-      this.link?.disconnect();
       return this.getView();
     });
   }
