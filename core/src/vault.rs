@@ -23,6 +23,10 @@ pub use transfer::{BackupInfo, ImportReport};
 const INFO_FIELD_KEY: &[u8] = b"sigilvault v1 item field key";
 const FIELD_PASSWORD: &str = "password";
 const FIELD_NOTES: &str = "notes";
+/// Rótulo (AAD) das senhas antigas no histórico. / Label (AAD) of old passwords in the history.
+const FIELD_HISTORY: &str = "history";
+/// Quantas senhas anteriores cada item guarda. / How many previous passwords each item keeps.
+pub const MAX_HISTORY: usize = 10;
 
 /// Identificador aleatório de um item (128 bits).
 /// Random item identifier (128 bits).
@@ -58,6 +62,14 @@ pub enum ItemKind {
     SecureNote,
 }
 
+/// Senha anterior de um item (cifrada). / Previous password of an item (encrypted).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct HistoryEntry {
+    password: Sealed,
+    changed_at: u64,
+}
+
 /// Item guardado no cofre. Senha e notas ficam cifradas até alguém pedir para ver.
 /// Item stored in the vault. Password and notes stay encrypted until someone asks to see them.
 #[derive(Debug, Clone, Serialize, Deserialize, Zeroize, ZeroizeOnDrop)]
@@ -77,6 +89,13 @@ pub struct Item {
     notes: Option<Sealed>,
     created_at: u64,
     updated_at: u64,
+    /// Aceitar subdomínios do endereço salvo (desligado por padrão). / Accept subdomains of the saved address (off by default).
+    #[serde(default)]
+    match_subdomains: bool,
+    /// Senhas anteriores, da mais antiga para a mais nova. / Previous passwords, oldest to newest.
+    #[zeroize(skip)]
+    #[serde(default)]
+    history: Vec<HistoryEntry>,
 }
 
 impl Item {
@@ -120,6 +139,18 @@ impl Item {
     pub fn updated_at(&self) -> u64 {
         self.updated_at
     }
+    /// Aceita subdomínios do endereço salvo? / Accepts subdomains of the saved address?
+    pub fn match_subdomains(&self) -> bool {
+        self.match_subdomains
+    }
+    /// Quantas senhas anteriores estão guardadas. / How many previous passwords are stored.
+    pub fn history_len(&self) -> usize {
+        self.history.len()
+    }
+    /// Origem do endereço salvo, se for um site válido. / Origin of the saved address, if it is a valid site.
+    pub fn origin(&self) -> Option<crate::Origin> {
+        crate::Origin::parse(&self.url)
+    }
 }
 
 /// Dados para criar um item. / Data to create an item.
@@ -140,6 +171,9 @@ pub struct NewItem {
     pub password: Option<String>,
     /// Notas. / Notes.
     pub notes: Option<String>,
+    /// Aceitar subdomínios. / Accept subdomains.
+    #[zeroize(skip)]
+    pub match_subdomains: bool,
 }
 
 impl NewItem {
@@ -179,6 +213,9 @@ pub struct ItemUpdate {
     pub password: Option<String>,
     /// Notas novas, se mudaram. / New notes, if changed.
     pub notes: Option<String>,
+    /// Aceitar subdomínios. / Accept subdomains.
+    #[zeroize(skip)]
+    pub match_subdomains: bool,
 }
 
 /// Chave pública de um código, guardada no corpo cifrado.
@@ -445,6 +482,11 @@ impl Vault {
                     *slot = Some(crypto::seal(&new_field_key, &plain, &aad)?);
                 }
             }
+            let aad = field_aad(&self.vault_id, &item.id, FIELD_HISTORY);
+            for entry in &mut item.history {
+                let plain = crypto::open(&self.field_key, &entry.password.nonce, &entry.password.ciphertext, &aad)?;
+                entry.password = crypto::seal(&new_field_key, &plain, &aad)?;
+            }
         }
         let password_slot = make_password_slot(&self.vault_id, &new_key, password, kdf)?;
         let recovery_slots = make_recovery_slots(&self.vault_id, &new_key, &recovery_keys)?;
@@ -590,10 +632,13 @@ impl Vault {
             username: new.username.clone(),
             url: new.url.clone(),
             tags: new.tags.clone(),
-            password: self.seal_field(&id, FIELD_PASSWORD, new.password.as_deref())?,
-            notes: self.seal_field(&id, FIELD_NOTES, new.notes.as_deref())?,
+            // Texto vazio = sem senha/notas (mesma regra da edição). / Empty text = no password/notes (same rule as editing).
+            password: self.seal_field(&id, FIELD_PASSWORD, new.password.as_deref().filter(|p| !p.is_empty()))?,
+            notes: self.seal_field(&id, FIELD_NOTES, new.notes.as_deref().filter(|n| !n.is_empty()))?,
             created_at: ts,
             updated_at: ts,
+            match_subdomains: new.match_subdomains,
+            history: Vec::new(),
         };
         self.body.items.push(item);
         Ok(id)
@@ -612,11 +657,51 @@ impl Vault {
 
     /// Troca a senha de um item. / Changes an item's password.
     pub fn set_password(&mut self, id: ItemId, password: &str) -> Result<()> {
+        let archived = self.archive_if_changed(id, Some(password))?;
         let sealed = self.seal_field(&id, FIELD_PASSWORD, Some(password))?;
         let item = self.item_mut(id)?;
         item.password = sealed;
+        push_history(item, archived);
         item.updated_at = now();
         Ok(())
+    }
+
+    /// Se a senha vai mudar, devolve a atual cifrada para o histórico.
+    /// If the password is about to change, returns the current one encrypted for the history.
+    fn archive_if_changed(&self, id: ItemId, new: Option<&str>) -> Result<Option<HistoryEntry>> {
+        let Some(current) = self.reveal_password(id)? else { return Ok(None) };
+        if new == Some(current.as_str()) {
+            return Ok(None);
+        }
+        let sealed = crypto::seal(&self.field_key, current.as_bytes(), &field_aad(&self.vault_id, &id, FIELD_HISTORY))?;
+        Ok(Some(HistoryEntry { password: sealed, changed_at: now() }))
+    }
+
+    /// Senhas anteriores de um item, da mais nova para a mais antiga (data da troca + senha).
+    /// Previous passwords of an item, newest first (change date + password).
+    pub fn reveal_history(&self, id: ItemId) -> Result<Vec<(u64, Zeroizing<String>)>> {
+        let item = self.item(id).ok_or(Error::ItemNotFound)?;
+        let aad = field_aad(&self.vault_id, &id, FIELD_HISTORY);
+        item.history
+            .iter()
+            .rev()
+            .map(|e| {
+                let plain = crypto::open(&self.field_key, &e.password.nonce, &e.password.ciphertext, &aad)?;
+                let text = String::from_utf8(plain.to_vec()).map_err(|_| Error::Tampered)?;
+                Ok((e.changed_at, Zeroizing::new(text)))
+            })
+            .collect()
+    }
+
+    /// Logins que podem ser preenchidos nesta página (regra de [`crate::Origin::fills`]).
+    /// Logins that may be filled on this page (rule of [`crate::Origin::fills`]).
+    pub fn logins_for(&self, page: &crate::Origin) -> Vec<&Item> {
+        self.body
+            .items
+            .iter()
+            .filter(|i| i.kind == ItemKind::Login && i.password.is_some())
+            .filter(|i| i.origin().is_some_and(|o| o.fills(page, i.match_subdomains)))
+            .collect()
     }
 
     /// Remove um item. / Removes an item.
@@ -642,6 +727,10 @@ impl Vault {
         };
         let password = reseal(FIELD_PASSWORD, &update.password)?;
         let notes = reseal(FIELD_NOTES, &update.notes)?;
+        let archived = match update.password.as_deref() {
+            None => None,
+            Some(new) => self.archive_if_changed(id, (!new.is_empty()).then_some(new))?,
+        };
 
         let item = self.item_mut(id)?;
         item.title = update.title.trim().to_owned();
@@ -651,6 +740,8 @@ impl Vault {
         if let Some(p) = password {
             item.password = p;
         }
+        push_history(item, archived);
+        item.match_subdomains = update.match_subdomains;
         if let Some(n) = notes {
             item.notes = n;
         }
@@ -672,6 +763,16 @@ impl Vault {
         let pb = self.body.items[ib].password.take();
         self.body.items[ia].password = pb;
         self.body.items[ib].password = pa;
+    }
+}
+
+/// Guarda uma senha antiga, mantendo só as [`MAX_HISTORY`] mais novas.
+/// Stores an old password, keeping only the [`MAX_HISTORY`] newest.
+fn push_history(item: &mut Item, entry: Option<HistoryEntry>) {
+    if let Some(e) = entry {
+        item.history.push(e);
+        let extra = item.history.len().saturating_sub(MAX_HISTORY);
+        item.history.drain(..extra);
     }
 }
 

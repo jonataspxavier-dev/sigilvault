@@ -31,6 +31,20 @@ pub(crate) struct PortableItem {
     notes: Option<String>,
     created_at: u64,
     updated_at: u64,
+    #[serde(default)]
+    #[zeroize(skip)]
+    match_subdomains: bool,
+    /// Senhas anteriores (mais antiga primeiro). / Previous passwords (oldest first).
+    #[serde(default)]
+    history: Vec<PortableHistory>,
+}
+
+/// Senha anterior em forma portátil. / Previous password in portable form.
+#[derive(Serialize, Deserialize, Zeroize, ZeroizeOnDrop)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct PortableHistory {
+    password: String,
+    changed_at: u64,
 }
 
 impl PortableItem {
@@ -64,6 +78,8 @@ impl PortableItem {
             notes: item.notes.clone().filter(|n| !n.is_empty()),
             created_at: ts,
             updated_at: ts,
+            match_subdomains: item.match_subdomains,
+            history: Vec::new(),
         }
     }
 }
@@ -118,6 +134,13 @@ impl Vault {
                     notes: self.reveal_notes(i.id)?.map(|n| n.to_string()),
                     created_at: i.created_at,
                     updated_at: i.updated_at,
+                    match_subdomains: i.match_subdomains,
+                    history: self
+                        .reveal_history(i.id)?
+                        .into_iter()
+                        .rev()
+                        .map(|(changed_at, p)| PortableHistory { password: p.to_string(), changed_at })
+                        .collect(),
                 })
             })
             .collect()
@@ -137,6 +160,17 @@ impl Vault {
             notes: self.seal_field(&id, FIELD_NOTES, p.notes.as_deref())?,
             created_at: p.created_at,
             updated_at: p.updated_at,
+            match_subdomains: p.match_subdomains,
+            history: p
+                .history
+                .iter()
+                .skip(p.history.len().saturating_sub(super::MAX_HISTORY))
+                .map(|h| {
+                    let aad = super::field_aad(&self.vault_id, &id, super::FIELD_HISTORY);
+                    let password = crypto::seal(&self.field_key, h.password.as_bytes(), &aad)?;
+                    Ok(super::HistoryEntry { password, changed_at: h.changed_at })
+                })
+                .collect::<Result<Vec<_>>>()?,
         })
     }
 
