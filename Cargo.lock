@@ -3958,6 +3958,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "sigilvault-host"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "sigilvault-ipc",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
 name = "sigilvault-ipc"
 version = "0.1.0"
 dependencies = [
