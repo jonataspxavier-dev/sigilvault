@@ -388,6 +388,12 @@ impl Vault {
         Ok((vault, outcome))
     }
 
+    /// Confere se os bytes parecem um cofre SigilVault válido (estrutura e parâmetros), sem abrir.
+    /// Checks whether the bytes look like a valid SigilVault vault (structure and parameters), without opening.
+    pub fn check_file(bytes: &[u8]) -> Result<()> {
+        format::parse(bytes).map(drop)
+    }
+
     /// Lê um arquivo e abre com a senha mestra.
     /// Reads a file and opens it with the master password.
     pub fn open_file(path: impl AsRef<Path>, master_password: &str) -> Result<Self> {

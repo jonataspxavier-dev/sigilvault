@@ -177,3 +177,11 @@ fn merge_from_another_vault() {
     assert_eq!((report.added, report.duplicates), (1, 1));
     assert_eq!(password_of(&a, "Loja").as_deref(), Some("L0ja"));
 }
+
+#[test]
+fn check_file_accepts_vaults_only() {
+    let (mut v, _) = sample();
+    assert!(Vault::check_file(&v.to_bytes().unwrap()).is_ok());
+    assert!(Vault::check_file(&v.create_backup().unwrap()).is_err());
+    assert!(Vault::check_file(b"name,url\n").is_err());
+}
