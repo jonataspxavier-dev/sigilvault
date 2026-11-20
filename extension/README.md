@@ -10,12 +10,20 @@ Extensão WebExtensions **Manifest V3** em TypeScript. Um pacote serve ao Chrome
 - A chave de pareamento fica no IndexedDB como `CryptoKey` **não extraível**: nem a própria extensão consegue ler os bytes.
 - Cada conexão abre um canal **AES-256-GCM** com chaves novas e contador contra repetição.
 - O ícone da barra mostra o cofre **trancado**, **aberto** ou **sem conexão**, e muda na hora.
-- **Não guarda senhas** e, nesta fase, **não acessa nenhuma página**: a única permissão é `nativeMessaging`.
+- **Não guarda senhas.**
 
-**Fase 5 (próxima):**
-- preencher logins com um clique, comparando a origem completa;
-- balão "gerar senha forte ou só salvar";
-- aviso de salvar depois de enviar um formulário.
+**Fase 5 (pronta): navegador completo.**
+- Ícone do SigilVault (um selo de cera) dentro dos campos de login. Um clique abre o balão com as contas **daquele site**; outro clique preenche. Nunca preenche sozinho.
+- Em cadastros e trocas de senha: **Gerar senha forte** (tamanho, tipos de caractere, força em bits, "Gerar outra", "Usar e salvar") ou **Só salvar** a senha que você digitou. As opções preferidas viram padrão.
+- Depois de enviar um formulário: **"Salvar essa senha?"** ou **"Atualizar a senha?"**, só se o login for novo ou tiver mudado. A senha antiga vai para o histórico.
+- Proteções:
+  - o ícone e o balão são uma página da extensão dentro de um iframe, numa *shadow root* fechada; a página não lê nada e não consegue clicar lá dentro;
+  - a senha salva vai do app direto ao campo, nunca passa pelo balão;
+  - a origem vem do navegador, e o app confere a regra de origem de novo;
+  - o primeiro preenchimento em cada site pede confirmação no app; formulários dentro de outro site perguntam sempre;
+  - cliques só valem se forem reais e 500 ms depois de o conteúdo aparecer, e o Chrome, o Brave e o Opera também conferem se o balão está mesmo visível;
+  - se a página mexer no elemento do balão, ele fecha.
+- Permissões: Native Messaging e páginas `http`/`https`. Nunca arquivos locais.
 
 ### Como testar (desenvolvimento)
 
@@ -51,12 +59,20 @@ Para parear, clique no ícone do SigilVault, depois em **Parear com o app**, e d
 - The pairing key lives in IndexedDB as a **non-extractable** `CryptoKey`: not even the extension can read its bytes.
 - Each connection opens an **AES-256-GCM** channel with fresh keys and a replay counter.
 - The toolbar icon shows the vault as **locked**, **unlocked** or **not connected**, and changes instantly.
-- **Stores no passwords** and, in this phase, **accesses no web page**: the only permission is `nativeMessaging`.
+- **Stores no passwords.**
 
-**Phase 5 (next):**
-- one-click login fill, matching the full origin;
-- "generate a strong password or just save" popup;
-- offer to save after a form is submitted.
+**Phase 5 (done): full browser support.**
+- SigilVault icon (a wax seal) inside login fields. One click opens the balloon with the accounts **for that site**; another click fills. It never fills by itself.
+- On sign-up and password-change forms: **Generate a strong password** (length, character types, strength in bits, "Generate another", "Use and save") or **Just save** the password you typed. Preferred options become the default.
+- After a form is submitted: **"Save this password?"** or **"Update the password?"**, only if the login is new or changed. The old password goes to the history.
+- Protections:
+  - the icon and balloon are an extension page inside an iframe, in a closed shadow root; the page cannot read anything or click inside;
+  - the saved password goes from the app straight to the field, never through the balloon;
+  - the origin comes from the browser, and the app checks the origin rule again;
+  - the first fill on each site asks for confirmation in the app; forms inside another site always ask;
+  - clicks only count if real and 500 ms after the content appeared, and Chrome, Brave and Opera also check that the balloon is truly visible;
+  - if the page touches the balloon element, it closes.
+- Permissions: Native Messaging and `http`/`https` pages. Never local files.
 
 ### How to test (development)
 

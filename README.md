@@ -8,7 +8,7 @@
 
 **SigilVault** é um gerenciador de senhas **local** para Windows. Ele guarda tudo criptografado no próprio computador, preenche senhas no navegador e em apps desktop e gera senhas fortes. Nada vai para a nuvem, a menos que você escolha.
 
-> Status: **Fase 4 concluída**: núcleo, app desktop, exportação e importação, e a extensão do navegador pareada com o app. Próximo passo: preencher logins no navegador.
+> Status: **Fase 5 concluída**: o navegador preenche logins com um clique, gera ou só salva senhas em cadastros e oferece salvar depois do envio. Próximo passo: atalhos e Auto-Type no desktop.
 
 ### Visão geral
 
@@ -44,6 +44,7 @@ Apps desktop ◄──────────── Auto-Type (atalho) ──�
 - **Aleatoriedade:** sempre o gerador seguro do sistema operacional.
 - **Bibliotecas:** apenas as auditadas do ecossistema RustCrypto. Nada de criptografia própria.
 - **Protege contra:** roubo do PC ou do disco, vazamento do arquivo ou do backup, phishing e vazamento de nuvem.
+- **Preenchimento no navegador:** só com clique; origem completa (protocolo + domínio + porta), subdomínios só se você permitir no item, e nunca de `https` para `http`. A origem vem do navegador, e o app confere de novo. O primeiro preenchimento em cada site pede confirmação no app; formulários dentro de outro site perguntam sempre. Ícone e balão num iframe da extensão que a página não lê; cliques só reais, depois de 500 ms visíveis. Registro de preenchimentos e limite de frequência. Senhas trocadas vão para o histórico.
 - **Extensão ↔ app:** Native Messaging (sem porta de rede) → `sigilvault-host.exe` → named pipe só do seu usuário. Cada lado confere o executável do outro. Pareamento OPAQUE com código mostrado no app; depois, canal AES-256-GCM por conexão. A extensão nunca guarda senhas.
 - **Não protege contra:** malware ou keylogger rodando enquanto o cofre está desbloqueado.
 
@@ -53,8 +54,8 @@ Apps desktop ◄──────────── Auto-Type (atalho) ──�
 2. App desktop (Tauri): criar e desbloquear o cofre, CRUD, gerador, bandeja e bloqueio automático ✅
 3. Exportar e importar, backups locais e importação de outros gerenciadores ✅
 4. Extensão + Native Messaging com pareamento seguro ✅
-5. **Navegador completo: preencher, balão "gerar ou só salvar" e aviso de salvar** ← *próxima*
-6. Desktop completo: atalhos globais, pop-up de busca e Auto-Type
+5. Navegador completo: preencher, balão "gerar ou só salvar" e aviso de salvar ✅
+6. **Desktop completo: atalhos globais, pop-up de busca e Auto-Type** ← *próxima*
 7. Endurecimento e lançamento: revisão de segurança, instalador assinado e lojas
 
 ### Desenvolvimento
@@ -74,7 +75,7 @@ Requisitos: Rust estável (rustup), Node.js LTS e Visual Studio Build Tools com 
 
 **SigilVault** is a **local** password manager for Windows. It keeps everything encrypted on your own computer, fills passwords in the browser and in desktop apps, and generates strong passwords. Nothing goes to the cloud unless you choose so.
 
-> Status: **Phase 4 done**: core, desktop app, export and import, and the browser extension paired with the app. Next: filling logins in the browser.
+> Status: **Phase 5 done**: the browser fills logins with one click, generates or just saves passwords on sign-up forms and offers to save after submitting. Next: desktop hotkeys and Auto-Type.
 
 ### Overview
 
@@ -110,6 +111,7 @@ Desktop apps ◄──────────── Auto-Type (hotkey) ── T
 - **Randomness:** always the operating system's secure RNG.
 - **Libraries:** only audited RustCrypto crates. No home-made cryptography.
 - **Protects against:** stolen PC or disk, leaked file or backup, phishing and cloud leaks.
+- **Browser filling:** click only; full origin (scheme + domain + port), subdomains only if you allow them on the item, and never from `https` to `http`. The origin comes from the browser, and the app checks it again. The first fill on each site asks for confirmation in the app; forms inside another site always ask. Icon and balloon in an extension iframe the page cannot read; real clicks only, after 500 ms on screen. Fill log and rate limit. Changed passwords go to the history.
 - **Extension ↔ app:** Native Messaging (no network port) → `sigilvault-host.exe` → a named pipe for your user only. Each side checks the other's executable. OPAQUE pairing with a code shown in the app; then an AES-256-GCM channel per connection. The extension never stores passwords.
 - **Does not protect against:** malware or keyloggers running while the vault is unlocked.
 
@@ -119,8 +121,8 @@ Desktop apps ◄──────────── Auto-Type (hotkey) ── T
 2. Desktop app (Tauri): create and unlock the vault, CRUD, generator, tray and auto-lock ✅
 3. Export and import, local backups and import from other managers ✅
 4. Extension + Native Messaging with secure pairing ✅
-5. **Full browser support: fill, "generate or just save" popup and save prompt** ← *next*
-6. Full desktop support: global hotkeys, search popup and Auto-Type
+5. Full browser support: fill, "generate or just save" popup and save prompt ✅
+6. **Full desktop support: global hotkeys, search popup and Auto-Type** ← *next*
 7. Hardening and release: security review, signed installer and store publishing
 
 ### Development
