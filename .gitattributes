@@ -1,0 +1,7 @@
+# Fim de linha LF no repositório para todos os textos.
+# LF line endings in the repository for all text files.
+* text=auto eol=lf
+
+*.png binary
+*.ico binary
+*.sigil binary

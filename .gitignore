@@ -1,0 +1,54 @@
+# ── Segredos / Secrets ─────────────────────────────────────────────
+# Arquivos de cofre reais NUNCA vão para o Git.
+# Real vault files must NEVER be committed.
+*.sigil
+*.sigil.tmp
+*.sigil.bak
+# Exportações em texto puro / Plain-text exports
+*.csv
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+
+# ── Rust ───────────────────────────────────────────────────────────
+target/
+**/*.rs.bk
+*.pdb
+
+# ── Node / TypeScript ──────────────────────────────────────────────
+node_modules/
+dist/
+build/
+.vite/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ── Tauri ──────────────────────────────────────────────────────────
+app/src-tauri/target/
+app/src-tauri/gen/schemas/
+app/src-tauri/WixTools/
+
+# ── Extensão / Extension ───────────────────────────────────────────
+extension/web-ext-artifacts/
+*.zip
+*.xpi
+*.crx
+
+# ── Editor e sistema / Editor and OS ───────────────────────────────
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ── Claude Code ────────────────────────────────────────────────────
+# Configurações pessoais ficam fora; as do projeto entram.
+# Personal settings stay out; project settings are committed.
+.claude/settings.local.json
