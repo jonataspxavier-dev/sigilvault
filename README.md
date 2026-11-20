@@ -8,7 +8,7 @@
 
 **SigilVault** é um gerenciador de senhas **local** para Windows. Ele guarda tudo criptografado no próprio computador, preenche senhas no navegador e em apps desktop e gera senhas fortes. Nada vai para a nuvem, a menos que você escolha.
 
-> Status: **Fase 2 em andamento**: o núcleo em Rust está pronto e o app desktop já cria, desbloqueia, recupera e edita o cofre.
+> Status: **Fase 3 concluída**: núcleo, app desktop e exportação, importação e backups prontos. Próximo passo: a extensão do navegador.
 
 ### Visão geral
 
@@ -46,9 +46,9 @@ Apps desktop ◄──────────── Auto-Type (atalho) ──�
 ### Fases
 
 1. Núcleo em Rust + testes ✅
-2. **App desktop** ← *atual* (Tauri): criar e desbloquear o cofre, CRUD, gerador, bandeja e bloqueio automático
-3. Exportar e importar, backups locais e importação de outros gerenciadores
-4. Extensão + Native Messaging com pareamento seguro
+2. App desktop (Tauri): criar e desbloquear o cofre, CRUD, gerador, bandeja e bloqueio automático ✅
+3. Exportar e importar, backups locais e importação de outros gerenciadores ✅
+4. **Extensão + Native Messaging com pareamento seguro** ← *próxima*
 5. Navegador completo: preencher, balão "gerar ou só salvar" e aviso de salvar
 6. Desktop completo: atalhos globais, pop-up de busca e Auto-Type
 7. Endurecimento e lançamento: revisão de segurança, instalador assinado e lojas
@@ -69,7 +69,7 @@ Requisitos: Rust estável (rustup), Node.js LTS e Visual Studio Build Tools com 
 
 **SigilVault** is a **local** password manager for Windows. It keeps everything encrypted on your own computer, fills passwords in the browser and in desktop apps, and generates strong passwords. Nothing goes to the cloud unless you choose so.
 
-> Status: **Phase 2 in progress**: the Rust core is done and the desktop app already creates, unlocks, recovers and edits the vault.
+> Status: **Phase 3 done**: core, desktop app, and export, import and backups are ready. Next: the browser extension.
 
 ### Overview
 
@@ -107,9 +107,9 @@ Desktop apps ◄──────────── Auto-Type (hotkey) ── T
 ### Phases
 
 1. Rust core + tests ✅
-2. **Desktop app** ← *current* (Tauri): create and unlock the vault, CRUD, generator, tray and auto-lock
-3. Export and import, local backups and import from other managers
-4. Extension + Native Messaging with secure pairing
+2. Desktop app (Tauri): create and unlock the vault, CRUD, generator, tray and auto-lock ✅
+3. Export and import, local backups and import from other managers ✅
+4. **Extension + Native Messaging with secure pairing** ← *next*
 5. Full browser support: fill, "generate or just save" popup and save prompt
 6. Full desktop support: global hotkeys, search popup and Auto-Type
 7. Hardening and release: security review, signed installer and store publishing
