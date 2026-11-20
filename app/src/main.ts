@@ -7,6 +7,7 @@ import { setLang } from "./i18n";
 import { session } from "./nav";
 import { errorMessage } from "./ui";
 import { showCreate, showRecover, showUnlock } from "./views/auth";
+import { showPendingPairing, watchPairing } from "./pairing";
 import { showVault } from "./views/vault";
 
 async function boot(): Promise<void> {
@@ -14,7 +15,11 @@ async function boot(): Promise<void> {
   session.settings = state.settings;
   session.remainingCodes = state.remainingCodes;
   setLang(state.settings.language);
-  if (state.unlocked) showVault();
+  if (state.unlocked) {
+    showVault();
+    // A janela pode ter sido aberta justamente para mostrar um código. / The window may have opened just to show a code.
+    void showPendingPairing();
+  }
   else if (state.hasVault) showUnlock(state);
   else showCreate();
 }
@@ -33,6 +38,8 @@ document.addEventListener("contextmenu", (e) => {
   const target = e.target as HTMLElement;
   if (!target.closest("input, textarea")) e.preventDefault();
 });
+
+watchPairing();
 
 boot().catch((e) => {
   document.getElementById("app")!.textContent = errorMessage(e);

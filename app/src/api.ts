@@ -2,6 +2,7 @@
 // Typed calls to the app's Rust commands. No cryptography happens here.
 
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 
 export type Lang = "pt" | "en";
 export type ItemKind = "login" | "secure_note";
@@ -80,6 +81,29 @@ export function isCmdError(e: unknown): e is CmdError {
   return typeof e === "object" && e !== null && typeof (e as { code?: unknown }).code === "string";
 }
 
+/** Pareamento pedido por uma extensão, com o código para mostrar. / Pairing requested by an extension, with the code to show. */
+export interface PairingPending {
+  code: string;
+  browser: string;
+  expiresInSecs: number;
+  attemptsLeft: number;
+}
+
+/** Navegador pareado. / Paired browser. */
+export interface PairingEntry {
+  id: string;
+  browser: string;
+  createdAt: number;
+  lastSeen: number;
+  connected: boolean;
+}
+
+/** Aviso do app sobre o pareamento. / App notice about pairing. */
+export interface PairingEvent {
+  event: "pending" | "paired" | "cancelled";
+  browser: string | null;
+}
+
 export const api = {
   appState: () => invoke<AppState>("app_state"),
   passwordStrength: (password: string, username: string) => invoke<number>("password_strength", { password, username }),
@@ -110,4 +134,10 @@ export const api = {
   importVaultFile: () => invoke<boolean>("import_vault_file"),
   listBackups: () => invoke<BackupEntry[]>("list_backups"),
   restoreBackup: (id: string) => invoke<boolean>("restore_backup", { id }),
+  // Fase 4: extensão do navegador. / Phase 4: browser extension.
+  pairingPending: () => invoke<PairingPending | null>("pairing_pending"),
+  cancelPairing: () => invoke<void>("cancel_pairing"),
+  listPairings: () => invoke<PairingEntry[]>("list_pairings"),
+  removePairing: (id: string) => invoke<void>("remove_pairing", { id }),
+  onPairing: (cb: (e: PairingEvent) => void) => listen<PairingEvent>("pairing", (e) => cb(e.payload)),
 };

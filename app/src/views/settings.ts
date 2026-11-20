@@ -3,10 +3,53 @@
 
 import { api, type Lang } from "../api";
 import { h } from "../dom";
-import { setLang, t } from "../i18n";
+import { getLang, setLang, t } from "../i18n";
 import { nav, session } from "../nav";
 import { busy, button, divider, errorBox, errorMessage, field, passwordInput, strengthMeter, toast } from "../ui";
 import { showCodes } from "./auth";
+
+/** Lista dos navegadores pareados, com botão de remover. / List of paired browsers, with a remove button. */
+function browsersSection(): HTMLElement {
+  const list = h("ul", { class: "pairings" });
+  const err = errorBox();
+  const load = async () => {
+    err.clear();
+    try {
+      const entries = await api.listPairings();
+      if (entries.length === 0) {
+        list.replaceChildren(h("li", { class: "muted" }, t("set_browsers_none")));
+        return;
+      }
+      list.replaceChildren(
+        ...entries.map((p) => {
+          const since = new Date(p.createdAt * 1000).toLocaleDateString(getLang() === "pt" ? "pt-BR" : "en-US");
+          const remove = button(t("set_browsers_remove"), {
+            variant: "danger",
+            onClick: async () => {
+              try {
+                await busy(remove, () => api.removePairing(p.id));
+                toast(t("set_browsers_removed"));
+                await load();
+              } catch (ex) {
+                err.show(errorMessage(ex));
+              }
+            },
+          });
+          return h(
+            "li",
+            { class: "pairing" },
+            h("div", null, h("strong", null, p.browser), h("div", { class: "muted" }, t("set_browsers_since", { date: since }), p.connected ? ` · ${t("set_browsers_connected")}` : "")),
+            remove,
+          );
+        }),
+      );
+    } catch (ex) {
+      err.show(errorMessage(ex));
+    }
+  };
+  void load();
+  return h("div", { class: "stack" }, h("p", { class: "muted" }, t("set_browsers_intro")), list, err.el);
+}
 
 export function settingsPanel(username: string, onLanguageChange: () => void): HTMLElement {
   const s = session.settings!;
@@ -96,6 +139,9 @@ export function settingsPanel(username: string, onLanguageChange: () => void): H
     divider(),
     h("h3", { class: "subtitle" }, t("set_codes")),
     regenForm,
+    divider(),
+    h("h3", { class: "subtitle" }, t("set_browsers")),
+    browsersSection(),
     divider(),
     h("h3", { class: "subtitle" }, t("set_about")),
     h("p", { class: "muted" }, t("about_text")),

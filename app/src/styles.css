@@ -996,3 +996,38 @@ select.input {
     animation: none !important;
   }
 }
+
+/* ── Pareamento com a extensão / Extension pairing ─────────────── */
+
+.pair-code {
+  margin: 6px 0;
+  padding: 12px;
+  font: 700 30px var(--font-mono);
+  letter-spacing: 0.18em;
+  text-align: center;
+  color: var(--gold-light);
+  background: var(--stone-900);
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  user-select: text;
+}
+
+.pairings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pairing {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--iron);
+  border-radius: 8px;
+  background: var(--stone-800);
+}
