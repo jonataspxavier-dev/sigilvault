@@ -67,6 +67,11 @@ pub enum Error {
     #[error("não restam códigos de recuperação / no recovery codes left")]
     NoRecoveryCodesLeft,
 
+    /// Arquivo de importação em formato desconhecido ou não suportado (ex.: exportação cifrada).
+    /// Import file in an unknown or unsupported format (e.g. encrypted export).
+    #[error("formato de importação não suportado: {0} / unsupported import format: {0}")]
+    UnsupportedImport(&'static str),
+
     /// Falha do gerador aleatório do sistema operacional.
     /// Operating system random generator failure.
     #[error("falha no gerador aleatório do sistema / system random generator failure")]

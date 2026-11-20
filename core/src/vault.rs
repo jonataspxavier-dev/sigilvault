@@ -16,6 +16,10 @@ use crate::format::{self, Header, PasswordSlot, RecoverySlot, VAULT_ID_LEN};
 use crate::recovery::{self, CODE_COUNT, CODE_ID_LEN, RecoveryCode};
 use crate::strength;
 
+mod transfer;
+
+pub use transfer::{BackupInfo, ImportReport};
+
 const INFO_FIELD_KEY: &[u8] = b"sigilvault v1 item field key";
 const FIELD_PASSWORD: &str = "password";
 const FIELD_NOTES: &str = "notes";
@@ -196,6 +200,23 @@ struct Body {
     #[zeroize(skip)]
     recovery_keys: Vec<RecoveryPublic>,
     items: Vec<Item>,
+    /// Chave dos backups locais. Fica só aqui dentro: backups não têm slots, então só quem abre
+    /// o cofre atual consegue restaurá-los.
+    /// Local backup key. It lives only here: backups have no slots, so only someone who opens
+    /// the current vault can restore them.
+    #[serde(default)]
+    backup_key: Option<BackupKey>,
+}
+
+/// Chave de backup (256 bits). / Backup key (256 bits).
+#[derive(Clone, Serialize, Deserialize, Zeroize, ZeroizeOnDrop)]
+#[serde(transparent)]
+struct BackupKey(#[serde(with = "crate::hex::array")] [u8; KEY_LEN]);
+
+impl BackupKey {
+    fn random() -> Result<Self> {
+        Ok(Self(*crypto::random_key()?))
+    }
 }
 
 /// Resultado de abrir o cofre com um código de recuperação.
@@ -315,7 +336,12 @@ impl Vault {
             password_slot: make_password_slot(&vault_id, &vault_key, master_password, kdf)?,
             recovery_slots: make_recovery_slots(&vault_id, &vault_key, &publics)?,
             vault_key,
-            body: Body { username: username.to_owned(), recovery_keys: publics, items: Vec::new() },
+            body: Body {
+                username: username.to_owned(),
+                recovery_keys: publics,
+                items: Vec::new(),
+                backup_key: Some(BackupKey::random()?),
+            },
         };
         Ok((vault, codes))
     }
@@ -373,7 +399,10 @@ impl Vault {
         // Se o cabeçalho ou o corpo foram alterados, a verificação falha aqui.
         // If the header or body were altered, verification fails here.
         let plain = crypto::open(&vault_key, &h.body_nonce, parsed.body_ciphertext, parsed.aad)?;
-        let body: Body = serde_json::from_slice(&plain).map_err(|_| Error::InvalidFormat("corpo / body"))?;
+        let mut body: Body = serde_json::from_slice(&plain).map_err(|_| Error::InvalidFormat("corpo / body"))?;
+        if body.backup_key.is_none() {
+            body.backup_key = Some(BackupKey::random()?);
+        }
         // Os slots de código precisam bater com as chaves públicas guardadas no corpo.
         // Code slots must match the public keys stored in the body.
         let consistent = h.recovery_slots.len() == body.recovery_keys.len()

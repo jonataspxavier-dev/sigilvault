@@ -19,11 +19,13 @@
 //! # Ok::<(), sigilvault_core::Error>(())
 //! ```
 
+mod backup;
 pub mod crypto;
 pub mod error;
 mod format;
 pub mod generator;
 mod hex;
+pub mod import;
 pub mod recovery;
 pub mod strength;
 mod vault;
@@ -32,4 +34,4 @@ pub use crypto::KdfParams;
 pub use error::{Error, Result};
 pub use generator::{GeneratorOptions, generate};
 pub use recovery::RecoveryCode;
-pub use vault::{Item, ItemId, ItemKind, ItemUpdate, NewItem, RecoveryOutcome, Vault};
+pub use vault::{BackupInfo, ImportReport, Item, ItemId, ItemKind, ItemUpdate, NewItem, RecoveryOutcome, Vault};
