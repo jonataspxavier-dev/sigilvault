@@ -104,6 +104,10 @@ impl Item {
     pub fn has_password(&self) -> bool {
         self.password.is_some()
     }
+    /// Tem notas guardadas? / Has stored notes?
+    pub fn has_notes(&self) -> bool {
+        self.notes.is_some()
+    }
     /// Criado em (segundos Unix). / Created at (Unix seconds).
     pub fn created_at(&self) -> u64 {
         self.created_at
