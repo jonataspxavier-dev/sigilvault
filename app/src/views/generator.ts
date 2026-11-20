@@ -8,7 +8,9 @@ import { session } from "../nav";
 import { button, coloredSecret, errorBox, errorMessage, toast } from "../ui";
 import { entropyLabel } from "../util";
 
-export function generatorPanel(opts: { onUse?: (password: string) => void; compact?: boolean } = {}): HTMLElement {
+/** `minimal`: sem "copiar" e "salvar como padrão" (o pop-up rápido não tem essas permissões).
+ *  `minimal`: no "copy" and "save as default" (the quick popup lacks those permissions). */
+export function generatorPanel(opts: { onUse?: (password: string) => void; compact?: boolean; minimal?: boolean; useLabel?: string } = {}): HTMLElement {
   const prefs: GeneratorPrefs = { ...session.settings!.generator };
   let current = "";
 
@@ -52,7 +54,7 @@ export function generatorPanel(opts: { onUse?: (password: string) => void; compa
     "div",
     { class: "actions" },
     button(t("gen_again"), { icon: "refresh", onClick: () => void generate() }),
-    button(t("copy"), {
+    opts.minimal ? null : button(t("copy"), {
       icon: "copy",
       onClick: async () => {
         if (!current) return;
@@ -63,7 +65,7 @@ export function generatorPanel(opts: { onUse?: (password: string) => void; compa
         }
       },
     }),
-    opts.onUse ? button(t("gen_use"), { icon: "check", variant: "primary", onClick: () => current && opts.onUse!(current) }) : null,
+    opts.onUse ? button(opts.useLabel ?? t("gen_use"), { icon: "check", variant: "primary", onClick: () => current && opts.onUse!(current) }) : null,
   );
 
   const saveDefault = h(
@@ -100,7 +102,7 @@ export function generatorPanel(opts: { onUse?: (password: string) => void; compa
     ),
     err.el,
     actions,
-    saveDefault,
+    opts.minimal ? null : saveDefault,
   );
   void generate();
   return panel;

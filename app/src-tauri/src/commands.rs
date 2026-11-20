@@ -291,6 +291,10 @@ pub struct ItemDto {
     updated_at: u64,
     match_subdomains: bool,
     history_len: usize,
+    /// Programa: caminho do executável. / Program: executable path.
+    app_path: String,
+    /// Programa: a assinatura foi registrada? / Program: was the signature recorded?
+    app_signed: bool,
 }
 
 impl From<&Item> for ItemDto {
@@ -308,6 +312,8 @@ impl From<&Item> for ItemDto {
             updated_at: i.updated_at(),
             match_subdomains: i.match_subdomains(),
             history_len: i.history_len(),
+            app_path: i.app_path().to_owned(),
+            app_signed: i.app_signer().is_some(),
         }
     }
 }
@@ -328,6 +334,8 @@ pub struct ItemInput {
     #[zeroize(skip)]
     #[serde(default)]
     match_subdomains: bool,
+    #[serde(default)]
+    app_path: String,
 }
 
 fn parse_id(id: &str) -> CmdResult<ItemId> {
@@ -354,6 +362,7 @@ pub fn add_item(state: State<'_, AppState>, item: ItemInput) -> CmdResult<String
     new.password = item.password.clone().filter(|p| !p.is_empty());
     new.notes = item.notes.clone().filter(|n| !n.is_empty());
     new.match_subdomains = item.match_subdomains;
+    new.app_path.clone_from(&item.app_path);
     vault_ref(&inner)?;
     backup_before(&mut inner, &state, false);
     let id = vault_mut(&mut inner)?.add_item(new)?;
@@ -373,6 +382,15 @@ pub fn update_item(state: State<'_, AppState>, id: String, item: ItemInput) -> C
     up.password.clone_from(&item.password);
     up.notes.clone_from(&item.notes);
     up.match_subdomains = item.match_subdomains;
+    up.app_path.clone_from(&item.app_path);
+    // A assinatura guardada só vale para o mesmo executável; trocou o caminho, ela some.
+    // The stored signature only applies to the same executable; if the path changed, it is dropped.
+    {
+        let current = vault_ref(&inner)?.item(id).ok_or(CmdError::new("not_found"))?;
+        if sigilvault_core::normalize_path(current.app_path()) == sigilvault_core::normalize_path(&item.app_path) {
+            up.app_signer = current.app_signer().map(str::to_owned);
+        }
+    }
     vault_ref(&inner)?;
     backup_before(&mut inner, &state, false);
     vault_mut(&mut inner)?.update_item(id, up)?;

@@ -17,10 +17,12 @@ const REVEAL_SECS = 30;
 
 type Mode = { kind: "empty" } | { kind: "detail"; id: string } | { kind: "edit"; id: string } | { kind: "new" } | { kind: "generator" } | { kind: "settings" } | { kind: "transfer" };
 
-const KIND_ICON: Record<ItemKind, IconName> = { login: "key", secure_note: "scroll" };
+/** Etiqueta das entradas criadas pelo atalho de gerar (igual a `desktop::PENDING_TAG`). / Tag of generate-hotkey entries. */
+const PENDING_TAG = "pendente";
+const KIND_ICON: Record<ItemKind, IconName> = { login: "key", secure_note: "scroll", program: "shield" };
 
 function kindLabel(kind: ItemKind): string {
-  return t(kind === "login" ? "kind_login" : "kind_secure_note");
+  return t(kind === "login" ? "kind_login" : kind === "program" ? "kind_program" : "kind_secure_note");
 }
 
 export function showVault(opts: { rollbackWarning?: boolean } = {}): void {
@@ -146,6 +148,7 @@ export function showVault(opts: { rollbackWarning?: boolean } = {}): void {
     const rows: HTMLElement[] = [];
     if (item.username) rows.push(row(t("field_username"), h("span", { class: "value" }, item.username), button(t("copy"), { icon: "copy", iconOnly: true, onClick: copy("username") })));
     if (item.url) rows.push(row(t("field_url"), h("span", { class: "value" }, item.url)));
+    if (item.appPath) rows.push(row(t("field_app_path"), h("div", { class: "value" }, item.appPath, item.appSigned ? h("div", { class: "muted small" }, t("app_signed")) : null)));
     if (item.hasPassword) {
       const value = h("span", { class: "value masked" }, "••••••••••••");
       let timer: number | undefined;
@@ -226,9 +229,45 @@ export function showVault(opts: { rollbackWarning?: boolean } = {}): void {
     }
     if (item.tags.length) rows.push(row(t("field_tags").split(" (")[0]!, h("span", { class: "tags" }, ...item.tags.map((tag) => h("span", { class: "tag" }, tag)))));
 
+    // Entrada "pendente" criada pelo atalho de gerar: o usuário confirma quando a conta existir.
+    // "Pending" entry created by the generate hotkey: the user confirms once the account exists.
+    const pending = item.tags.includes(PENDING_TAG)
+      ? h(
+          "div",
+          { class: "pending stack" },
+          h("span", null, t("pending_notice")),
+          h(
+            "div",
+            { class: "actions" },
+            button(t("pending_confirm"), {
+              icon: "check",
+              variant: "primary",
+              onClick: async () => {
+                try {
+                  await api.updateItem(item.id, {
+                    kind: item.kind,
+                    title: item.title,
+                    username: item.username,
+                    url: item.url,
+                    tags: item.tags.filter((tag) => tag !== PENDING_TAG),
+                    matchSubdomains: item.matchSubdomains,
+                    appPath: item.appPath,
+                  });
+                  await refresh();
+                  go({ kind: "detail", id: item.id });
+                } catch (e) {
+                  toast(errorMessage(e));
+                }
+              },
+            }),
+          ),
+        )
+      : null;
+
     mount(
       panel,
       h("div", { class: "detail-head" }, h("span", { class: "detail-icon" }, icon(KIND_ICON[item.kind], 28)), h("div", null, h("h2", { class: "title" }, item.title), h("div", { class: "muted small" }, kindLabel(item.kind), " · ", t("updated_at", { date: formatDate(item.updatedAt, getLang()) })))),
+      pending,
       h("dl", { class: "rows" }, ...rows),
       h(
         "div",
@@ -267,12 +306,19 @@ export function showVault(opts: { rollbackWarning?: boolean } = {}): void {
   // ── Editor ─────────────────────────────────────────────────────
 
   function renderEditor(existing: Item | null) {
-    const kind = h("select", { class: "input" }, h("option", { value: "login" }, t("kind_login")), h("option", { value: "secure_note" }, t("kind_secure_note")));
+    const kind = h(
+      "select",
+      { class: "input" },
+      h("option", { value: "login" }, t("kind_login")),
+      h("option", { value: "program" }, t("kind_program")),
+      h("option", { value: "secure_note" }, t("kind_secure_note")),
+    );
     kind.value = existing?.kind ?? "login";
     const title = textInput({ value: existing?.title, maxLength: 200 });
     const user = textInput({ value: existing?.username, autocomplete: "off", maxLength: 300 });
     const url = textInput({ value: existing?.url, placeholder: "https://", maxLength: 2000 });
     const subdomains = h("input", { type: "checkbox", checked: existing?.matchSubdomains ?? false });
+    const appPath = textInput({ value: existing?.appPath, placeholder: "C:\\Program Files\\…\\programa.exe", maxLength: 1000 });
     const pw = passwordInput({ placeholder: existing?.hasPassword ? t("password_keep") : "", autocomplete: "new-password" });
     const removePw = h("input", { type: "checkbox" });
     const notes = h("textarea", { class: "input textarea", rows: 5, spellcheck: false, maxLength: 20000 });
@@ -324,8 +370,16 @@ export function showVault(opts: { rollbackWarning?: boolean } = {}): void {
       },
     });
 
-    const loginOnly = [field(t("field_username"), user), field(t("field_url"), url), h("label", { class: "check small" }, subdomains, h("span", null, t("match_subdomains"))), h("div", { class: "field" }, h("span", { class: "field-label" }, t("field_password")), h("div", { class: "pw-line" }, pw.wrap, genBtn), existing?.hasPassword ? h("label", { class: "check small" }, removePw, h("span", null, t("remove_password"))) : null, genHost)];
-    const syncKind = () => loginOnly.forEach((el) => (el.hidden = kind.value !== "login"));
+    const siteOnly = [field(t("field_url"), url), h("label", { class: "check small" }, subdomains, h("span", null, t("match_subdomains")))];
+    const programOnly = [field(t("field_app_path"), appPath, t("app_path_hint"))];
+    const loginOnly = [field(t("field_username"), user), ...siteOnly, ...programOnly, h("div", { class: "field" }, h("span", { class: "field-label" }, t("field_password")), h("div", { class: "pw-line" }, pw.wrap, genBtn), existing?.hasPassword ? h("label", { class: "check small" }, removePw, h("span", null, t("remove_password"))) : null, genHost)];
+    const syncKind = () => {
+      // Login e Programa têm usuário e senha; o endereço é do login, o caminho é do programa.
+      // Login and Program have username and password; the address belongs to login, the path to program.
+      loginOnly.forEach((el) => (el.hidden = kind.value === "secure_note"));
+      siteOnly.forEach((el) => (el.hidden = kind.value !== "login"));
+      programOnly.forEach((el) => (el.hidden = kind.value !== "program"));
+    };
     kind.addEventListener("change", syncKind);
     syncKind();
 
@@ -346,14 +400,15 @@ export function showVault(opts: { rollbackWarning?: boolean } = {}): void {
       e.preventDefault();
       err.clear();
       if (!title.value.trim()) return err.show(t("required"));
-      const isLogin = kind.value === "login";
+      const isLogin = kind.value !== "secure_note";
       const input: ItemInput = {
         kind: kind.value as ItemKind,
         title: title.value.trim(),
         username: isLogin ? user.value.trim() : "",
-        url: isLogin ? url.value.trim() : "",
+        url: kind.value === "login" ? url.value.trim() : "",
         tags: parseTags(tags.value),
-        matchSubdomains: isLogin && subdomains.checked,
+        matchSubdomains: kind.value === "login" && subdomains.checked,
+        appPath: kind.value === "program" ? appPath.value.trim() : "",
       };
       if (existing) {
         if (!isLogin || removePw.checked) input.password = existing.hasPassword ? "" : undefined;

@@ -197,6 +197,8 @@ pub fn save(app: &AppHandle, req: &Value) -> Value {
             update.username = username.to_owned();
             update.password = Some(password.to_string());
             update.match_subdomains = item.match_subdomains();
+            update.app_path = item.app_path().to_owned();
+            update.app_signer = item.app_signer().map(str::to_owned);
             backup_before(&mut inner, &state, false);
             let Some(v) = inner.vault.as_mut() else { return json!({ "locked": true }) };
             if v.update_item(id, update).is_err() {

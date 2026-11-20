@@ -5,7 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
 export type Lang = "pt" | "en";
-export type ItemKind = "login" | "secure_note";
+export type ItemKind = "login" | "secure_note" | "program";
 
 export interface GeneratorPrefs {
   length: number;
@@ -21,6 +21,9 @@ export interface Settings {
   autoLockMinutes: number;
   clipboardClearSecs: number;
   generator: GeneratorPrefs;
+  /** Atalhos globais ("" = desligado). / Global hotkeys ("" = off). */
+  hotkeySearch: string;
+  hotkeyGenerate: string;
 }
 
 export interface AppState {
@@ -45,6 +48,9 @@ export interface Item {
   updatedAt: number;
   matchSubdomains: boolean;
   historyLen: number;
+  /** Programa: caminho do executável. / Program: executable path. */
+  appPath: string;
+  appSigned: boolean;
 }
 
 /** Em edição: `password`/`notes` ausentes = manter, "" = remover. / On edit: missing = keep, "" = remove. */
@@ -57,6 +63,7 @@ export interface ItemInput {
   password?: string;
   notes?: string;
   matchSubdomains?: boolean;
+  appPath?: string;
 }
 
 export interface ImportResult {
@@ -118,6 +125,24 @@ export interface PairingEvent {
   browser: string | null;
 }
 
+/** Pop-up rápido: para onde vai digitar. / Quick popup: where it will type. */
+export interface QuickContext {
+  mode: "search" | "generate";
+  target: { exeName: string; exePath: string; title: string; browser: boolean; elevated: boolean } | null;
+  unlocked: boolean;
+  username: string | null;
+  language: Lang;
+  generator: GeneratorPrefs;
+}
+
+export interface QuickItem {
+  id: string;
+  title: string;
+  username: string;
+  kind: ItemKind;
+  matched: boolean;
+}
+
 export const api = {
   appState: () => invoke<AppState>("app_state"),
   passwordStrength: (password: string, username: string) => invoke<number>("password_strength", { password, username }),
@@ -156,6 +181,14 @@ export const api = {
   // Fase 5. / Phase 5.
   revokeSite: (id: string, site: string) => invoke<void>("revoke_site", { id, site }),
   fillLog: () => invoke<FillEntry[]>("fill_log"),
+  // Fase 6. / Phase 6.
+  quickContext: () => invoke<QuickContext>("quick_context"),
+  quickSearch: (query: string) => invoke<QuickItem[]>("quick_search", { query }),
+  quickType: (id: string) => invoke<void>("quick_type", { id }),
+  quickSaveProgram: (title: string, username: string, password: string, typeIt: boolean) =>
+    invoke<string>("quick_save_program", { title, username, password, typeIt }),
+  quickClose: () => invoke<void>("quick_close"),
+  hotkeysInUse: () => invoke<("search" | "generate")[]>("hotkeys_in_use"),
   revealHistory: (id: string) => invoke<{ changedAt: number; password: string }[]>("reveal_history", { id }),
   onPairing: (cb: (e: PairingEvent) => void) => listen<PairingEvent>("pairing", (e) => cb(e.payload)),
 };

@@ -107,6 +107,8 @@ pub struct QuickContext {
     target: Option<TargetDto>,
     unlocked: bool,
     username: Option<String>,
+    language: String,
+    generator: crate::settings::GeneratorPrefs,
 }
 
 /// Para onde o pop-up vai digitar e em que modo. / Where the popup will type and in which mode.
@@ -129,6 +131,8 @@ pub fn quick_context(state: State<'_, AppState>, desktop: State<'_, Desktop>) ->
         }),
         unlocked: inner.vault.is_some(),
         username: inner.vault.as_ref().map(|v| v.username().to_owned()),
+        language: inner.settings.language.clone(),
+        generator: inner.settings.generator,
     }
 }
 

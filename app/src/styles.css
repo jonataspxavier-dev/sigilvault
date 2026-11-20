@@ -1064,3 +1064,119 @@ select.input {
   max-height: 260px;
   overflow: auto;
 }
+
+/* ── Pop-up rápido (Fase 6) / Quick popup (Phase 6) ────────────── */
+
+.quick-body {
+  overflow: hidden;
+}
+
+.quick {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100vh;
+  padding: 14px 16px;
+  border-radius: 0;
+}
+
+.quick-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.quick-logo {
+  width: 28px;
+  height: 28px;
+}
+
+.quick-target {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quick-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.quick-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  border: 1px solid var(--iron);
+  border-radius: 7px;
+  background: var(--stone-800);
+}
+
+.quick-item.selected {
+  border-color: var(--gold);
+}
+
+.quick-item-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.quick-item-text > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quick-item-actions {
+  display: flex;
+  gap: 5px;
+  flex: none;
+}
+
+.quick-badge {
+  font-size: 11px;
+  color: var(--gold-light);
+}
+
+.quick-hint,
+.quick-empty {
+  font-size: 12px;
+}
+
+.quick-tabs {
+  display: flex;
+  gap: 5px;
+}
+
+.quick-tabs .tab {
+  flex: 1;
+  padding: 6px;
+  font: 600 13px var(--font-body);
+  color: var(--muted);
+  background: var(--stone-900);
+  border: 1px solid var(--iron);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.quick-tabs .tab.active {
+  color: var(--gold-light);
+  border-color: var(--gold);
+}
+
+.pending {
+  padding: 8px 11px;
+  color: #f6e7c2;
+  background: rgba(201, 164, 92, 0.15);
+  border: 1px solid var(--gold);
+  border-radius: 7px;
+}

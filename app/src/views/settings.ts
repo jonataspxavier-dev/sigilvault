@@ -70,6 +70,62 @@ function browsersSection(): HTMLElement {
   return h("div", { class: "stack" }, h("p", { class: "muted" }, t("set_browsers_intro")), list, err.el);
 }
 
+/** Campo que captura uma combinação de teclas. / Field that captures a key combination. */
+function hotkeyInput(value: string): { el: HTMLElement; get(): string } {
+  const input = h("input", { class: "input input-mono", readOnly: true, value });
+  input.addEventListener("keydown", (e) => {
+    e.preventDefault();
+    if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) return;
+    const key = e.code === "Space" ? "Space" : /^Key[A-Z]$/.test(e.code) ? e.code.slice(3) : /^Digit\d$/.test(e.code) ? e.code.slice(5) : /^F\d{1,2}$/.test(e.code) ? e.code : null;
+    if (!key) return;
+    const parts = [e.ctrlKey && "Ctrl", e.altKey && "Alt", e.shiftKey && "Shift", e.metaKey && "Win", key].filter(Boolean);
+    input.value = parts.join("+");
+  });
+  const off = h("button", { type: "button", class: "link", onClick: () => (input.value = "") }, t("set_hotkey_off"));
+  return { el: h("div", { class: "pw-line" }, input, off), get: () => input.value };
+}
+
+/** Atalhos globais, com aviso se o Windows recusou (combinação já usada por outro programa).
+ *  Global hotkeys, with a warning if Windows refused (combination already used by another program). */
+function hotkeysSection(): HTMLElement {
+  const s = session.settings!;
+  const search = hotkeyInput(s.hotkeySearch);
+  const generate = hotkeyInput(s.hotkeyGenerate);
+  const err = errorBox();
+  const warn = h("div", { class: "stack" });
+  const showInUse = async () => {
+    const inUse = await api.hotkeysInUse().catch(() => []);
+    const settings = session.settings!;
+    warn.replaceChildren(
+      ...inUse.map((which) => h("p", { class: "error" }, t("set_hotkey_in_use", { combo: which === "search" ? settings.hotkeySearch : settings.hotkeyGenerate }))),
+    );
+  };
+  const save = button(t("save"), { variant: "primary", icon: "seal", type: "submit" });
+  const form = h(
+    "form",
+    { class: "stack" },
+    h("p", { class: "muted" }, t("set_hotkeys_intro")),
+    field(t("set_hotkey_search"), search.el),
+    field(t("set_hotkey_generate"), generate.el),
+    warn,
+    err.el,
+    h("div", { class: "actions" }, save),
+  );
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    err.clear();
+    try {
+      session.settings = await busy(save, () => api.saveSettings({ ...session.settings!, hotkeySearch: search.get(), hotkeyGenerate: generate.get() }));
+      toast(t("set_saved"));
+      await showInUse();
+    } catch (ex) {
+      err.show(errorMessage(ex));
+    }
+  });
+  void showInUse();
+  return form;
+}
+
 /** Registro dos últimos preenchimentos feitos pelos navegadores. / Log of the latest fills made by the browsers. */
 function fillLogSection(): HTMLElement {
   const list = h("ol", { class: "fill-log" });
@@ -177,6 +233,9 @@ export function settingsPanel(username: string, onLanguageChange: () => void): H
     divider(),
     h("h3", { class: "subtitle" }, t("set_codes")),
     regenForm,
+    divider(),
+    h("h3", { class: "subtitle" }, t("set_hotkeys")),
+    hotkeysSection(),
     divider(),
     h("h3", { class: "subtitle" }, t("set_browsers")),
     browsersSection(),

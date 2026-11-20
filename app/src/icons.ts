@@ -28,6 +28,8 @@ const ICONS = {
   key: [["circle", 7.5, 15.5, 3.8], ["path", "M10.3 12.8 20 3M16.5 6.5l2.5 2.5M14 9l2 2"]],
   // Pergaminho (nota segura) / Scroll (secure note)
   scroll: [["path", "M7 4h11a2 2 0 0 1 2 2v1h-3"], ["path", "M17 6v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1h11"], ["path", "M7 4a2 2 0 0 0-2 2v11M9 9h5M9 12h5"]],
+  // Usuário: cabeça e ombros / User: head and shoulders
+  user: [["circle", 12, 8, 3.6], ["path", "M4.5 20c.8-3.8 3.9-6 7.5-6s6.7 2.2 7.5 6"]],
   // Escudo (app desktop) / Shield (desktop app)
   shield: [["path", "M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"]],
   // Rosa dos ventos rúnica (configurações) / Runic compass (settings)
