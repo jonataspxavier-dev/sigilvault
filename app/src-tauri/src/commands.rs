@@ -518,6 +518,7 @@ pub fn save_settings(app: AppHandle, state: State<'_, AppState>, settings: Setti
     if language_changed {
         tray::refresh_menu(&app);
     }
+    crate::desktop::apply_hotkeys(&app, &settings);
     Ok(settings)
 }
 
@@ -540,5 +541,21 @@ mod tests {
         expected.sort();
         assert_eq!(granted, expected);
         assert_eq!(cap["windows"], serde_json::json!(["main-*"]));
+    }
+
+    /// O pop-up rápido só pode o mínimo: buscar, desbloquear, gerar, copiar e digitar.
+    /// The quick popup may only do the minimum: search, unlock, generate, copy and type.
+    #[test]
+    fn quick_popup_capability_is_minimal() {
+        let cap: serde_json::Value = serde_json::from_str(include_str!("../capabilities/quick.json")).unwrap();
+        let mut granted: Vec<&str> = cap["permissions"].as_array().unwrap().iter().map(|p| p.as_str().unwrap()).collect();
+        granted.sort();
+        let mut expected = vec![
+            "allow-unlock", "allow-generate-password", "allow-copy-field", "allow-quick-context", "allow-quick-search",
+            "allow-quick-type", "allow-quick-save-program", "allow-quick-close",
+        ];
+        expected.sort();
+        assert_eq!(granted, expected);
+        assert_eq!(cap["windows"], serde_json::json!(["quick-*"]));
     }
 }

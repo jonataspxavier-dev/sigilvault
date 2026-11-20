@@ -3,7 +3,10 @@
 
 pub mod clipboard;
 pub mod dpapi;
+pub mod hotkeys;
 pub mod system;
+pub mod target;
+pub mod typer;
 pub mod watcher;
 
 /// Converte texto para UTF-16 terminado em zero (formato das APIs do Windows).

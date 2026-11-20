@@ -65,11 +65,22 @@ pub struct Settings {
     pub clipboard_clear_secs: u32,
     /// Padrão do gerador. / Generator defaults.
     pub generator: GeneratorPrefs,
+    /// Atalho do pop-up de busca (vazio = desligado). / Search popup hotkey (empty = off).
+    pub hotkey_search: String,
+    /// Atalho de gerar (vazio = desligado). / Generate hotkey (empty = off).
+    pub hotkey_generate: String,
 }
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { language: "pt".into(), auto_lock_minutes: 5, clipboard_clear_secs: 30, generator: GeneratorPrefs::default() }
+        Self {
+            language: "pt".into(),
+            auto_lock_minutes: 5,
+            clipboard_clear_secs: 30,
+            generator: GeneratorPrefs::default(),
+            hotkey_search: "Ctrl+Shift+Space".into(),
+            hotkey_generate: "Ctrl+Shift+G".into(),
+        }
     }
 }
 
@@ -81,6 +92,16 @@ impl Settings {
             self.language = "pt".into();
         }
         self.auto_lock_minutes = self.auto_lock_minutes.clamp(1, 120);
+        // Atalho inválido volta ao padrão; vazio fica desligado; válido fica no formato canônico.
+        // Invalid hotkey goes back to default; empty stays off; valid is stored in canonical form.
+        let defaults = Self::default();
+        for (value, default) in [(&mut self.hotkey_search, defaults.hotkey_search), (&mut self.hotkey_generate, defaults.hotkey_generate)] {
+            if value.trim().is_empty() {
+                value.clear();
+            } else {
+                *value = crate::win::hotkeys::parse(value).map(crate::win::hotkeys::format).unwrap_or(default);
+            }
+        }
         self.clipboard_clear_secs = self.clipboard_clear_secs.clamp(10, 120);
         self.generator.length = self.generator.length.clamp(4, sigilvault_core::generator::MAX_LENGTH);
         let g = &self.generator;
@@ -117,8 +138,13 @@ mod tests {
             auto_lock_minutes: 0,
             clipboard_clear_secs: 999,
             generator: GeneratorPrefs { length: 9999, lowercase: false, uppercase: false, digits: false, symbols: false, exclude_ambiguous: true },
+            hotkey_search: "shift+a".into(),
+            hotkey_generate: "  ".into(),
         }
         .sanitized();
+        assert_eq!(s.hotkey_search, "Ctrl+Shift+Space");
+        assert_eq!(s.hotkey_generate, "");
+        assert_eq!(Settings { hotkey_search: "alt + k".into(), ..Settings::default() }.sanitized().hotkey_search, "Alt+K");
         assert_eq!(s.language, "pt");
         assert_eq!(s.auto_lock_minutes, 1);
         assert_eq!(s.clipboard_clear_secs, 120);

@@ -118,6 +118,7 @@ pub fn lock_app(app: &AppHandle, reopen: bool) {
     }
     announce_lock_state(app, true);
     window::destroy(app);
+    window::destroy_quick(app);
     if reopen {
         window::create(app);
     }

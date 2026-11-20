@@ -50,3 +50,35 @@ pub fn destroy(app: &AppHandle) {
         }
     }
 }
+
+/// Prefixo das janelas do pop-up rápido (permissões próprias, mais restritas).
+/// Prefix of the quick popup windows (their own, narrower permissions).
+const QUICK_PREFIX: &str = "quick-";
+
+/// Abre o pop-up rápido (sempre por cima, no centro, com foco). Fecha um anterior.
+/// Opens the quick popup (always on top, centered, focused). Closes a previous one.
+pub fn open_quick(app: &AppHandle) {
+    destroy_quick(app);
+    let label = format!("{QUICK_PREFIX}{}", COUNTER.fetch_add(1, Ordering::Relaxed) + 1);
+    if let Ok(w) = WebviewWindowBuilder::new(app, label, WebviewUrl::App("quick.html".into()))
+        .title("SigilVault")
+        .inner_size(500.0, 460.0)
+        .resizable(false)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .center()
+        .focused(true)
+        .build()
+    {
+        let _ = w.set_focus();
+    }
+}
+
+/// Fecha o pop-up rápido (se houver). / Closes the quick popup (if any).
+pub fn destroy_quick(app: &AppHandle) {
+    for (label, w) in app.webview_windows() {
+        if label.starts_with(QUICK_PREFIX) {
+            let _ = w.destroy();
+        }
+    }
+}

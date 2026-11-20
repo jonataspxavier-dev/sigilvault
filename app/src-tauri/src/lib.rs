@@ -5,6 +5,7 @@ mod attempts;
 mod backups;
 mod bridge;
 mod commands;
+mod desktop;
 mod dialogs;
 mod rollback;
 mod settings;
@@ -52,6 +53,10 @@ pub fn run() {
 
             // Ponte com a extensão do navegador (pipe protegido). / Bridge with the browser extension (protected pipe).
             bridge::start(app.handle());
+
+            // Atalhos globais e Auto-Type. / Global hotkeys and Auto-Type.
+            app.manage(desktop::Desktop::default());
+            desktop::start(app.handle());
 
             // Bloqueio por eventos do Windows. / Lock on Windows events.
             let handle = app.handle().clone();
@@ -112,6 +117,12 @@ pub fn run() {
             bridge::commands::revoke_site,
             bridge::commands::fill_log,
             commands::reveal_history,
+            desktop::quick_context,
+            desktop::quick_search,
+            desktop::quick_type,
+            desktop::quick_save_program,
+            desktop::quick_close,
+            desktop::hotkeys_in_use,
         ])
         .build(tauri::generate_context!())
         .expect("falha ao iniciar o SigilVault / failed to start SigilVault");

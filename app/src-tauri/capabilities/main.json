@@ -39,6 +39,12 @@
     "allow-revoke-site",
     "allow-fill-log",
     "allow-reveal-history",
+    "allow-quick-context",
+    "allow-quick-search",
+    "allow-quick-type",
+    "allow-quick-save-program",
+    "allow-quick-close",
+    "allow-hotkeys-in-use",
     "core:event:allow-listen",
     "core:event:allow-unlisten"
   ]
