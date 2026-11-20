@@ -4,6 +4,7 @@
 *.sigil
 *.sigil.tmp
 *.sigil.bak
+*.sigilbak
 # Exportações em texto puro / Plain-text exports
 *.csv
 .env

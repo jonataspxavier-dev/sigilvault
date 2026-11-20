@@ -76,7 +76,25 @@ export function showCreate(): void {
     }
   });
 
-  mount(root(), authCard(t("create_title"), h("p", { class: "muted" }, t("create_intro")), form));
+  const importErr = errorBox();
+  const importLink = h(
+    "button",
+    {
+      type: "button",
+      class: "link",
+      onClick: async () => {
+        importErr.clear();
+        try {
+          if (await api.importVaultFile()) await nav().boot();
+        } catch (ex) {
+          importErr.show(errorMessage(ex));
+        }
+      },
+    },
+    t("import_vault_link"),
+  );
+
+  mount(root(), authCard(t("create_title"), h("p", { class: "muted" }, t("create_intro")), form, divider(), importLink, importErr.el));
   username.focus();
 }
 

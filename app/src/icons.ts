@@ -37,6 +37,8 @@ const ICONS = {
   check: [["path", "M5 12.5l4.5 4.5L19 7.5"]],
   back: [["path", "M15 5l-7 7 7 7"]],
   warning: [["path", "M12 3 2 20h20z"], ["path", "M12 10v4.5M12 17.2v.3"]],
+  // Baú com seta (exportar e importar) / Chest with arrow (export and import)
+  chest: [["path", "M4 11h16v8.5A1.5 1.5 0 0 1 18.5 21h-13A1.5 1.5 0 0 1 4 19.5z"], ["path", "M4 11V9a4 4 0 0 1 4-4h1M20 11V9a4 4 0 0 0-4-4h-1"], ["path", "M10.5 14.5h3v3h-3z"], ["path", "M12 1.5v6M9.5 5 12 7.5 14.5 5"]],
   print: [["path", "M7 9V3h10v6"], ["rect", 4, 9, 16, 8, 1.5], ["path", "M7 14h10v7H7z"]],
 } satisfies Record<string, Shape[]>;
 

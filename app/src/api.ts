@@ -55,6 +55,21 @@ export interface ItemInput {
   notes?: string;
 }
 
+export interface ImportResult {
+  format: string;
+  added: number;
+  duplicates: number;
+  skipped: number;
+  plaintext: boolean;
+}
+
+export interface BackupEntry {
+  id: string;
+  createdAt: number;
+  revision: number;
+  itemCount: number;
+}
+
 /** Erro vindo do Rust: só um código, nunca segredos. / Error from Rust: just a code, never secrets. */
 export interface CmdError {
   code: string;
@@ -86,4 +101,13 @@ export const api = {
   changeMasterPassword: (current: string, next: string) => invoke<void>("change_master_password", { current, new: next }),
   regenerateCodes: (password: string) => invoke<string[]>("regenerate_codes", { password }),
   saveSettings: (settings: Settings) => invoke<Settings>("save_settings", { settings }),
+  // Fase 3: os caminhos vêm de diálogos nativos abertos pelo Rust. / Phase 3: paths come from native dialogs opened by Rust.
+  exportVault: (mode: "copy" | "password", password?: string) => invoke<boolean>("export_vault", { mode, password }),
+  exportCsv: (masterPassword: string) => invoke<boolean>("export_csv", { masterPassword }),
+  importFile: () => invoke<ImportResult | null>("import_file"),
+  deleteImportedFile: () => invoke<boolean>("delete_imported_file"),
+  mergeVault: (password: string) => invoke<ImportResult | null>("merge_vault", { password }),
+  importVaultFile: () => invoke<boolean>("import_vault_file"),
+  listBackups: () => invoke<BackupEntry[]>("list_backups"),
+  restoreBackup: (id: string) => invoke<boolean>("restore_backup", { id }),
 };

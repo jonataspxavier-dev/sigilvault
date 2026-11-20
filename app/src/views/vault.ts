@@ -10,11 +10,12 @@ import { busy, button, coloredSecret, errorBox, errorMessage, field, modal, pass
 import { formatDate, parseTags } from "../util";
 import { generatorPanel } from "./generator";
 import { settingsPanel } from "./settings";
+import { transferPanel } from "./transfer";
 
 /** Segundos até ocultar uma senha mostrada. / Seconds until a shown password is hidden again. */
 const REVEAL_SECS = 30;
 
-type Mode = { kind: "empty" } | { kind: "detail"; id: string } | { kind: "edit"; id: string } | { kind: "new" } | { kind: "generator" } | { kind: "settings" };
+type Mode = { kind: "empty" } | { kind: "detail"; id: string } | { kind: "edit"; id: string } | { kind: "new" } | { kind: "generator" } | { kind: "settings" } | { kind: "transfer" };
 
 const KIND_ICON: Record<ItemKind, IconName> = { login: "key", secure_note: "scroll" };
 
@@ -53,6 +54,7 @@ export function showVault(opts: { rollbackWarning?: boolean } = {}): void {
       { class: "topbar-actions" },
       button(t("new_item"), { icon: "plus", variant: "primary", onClick: () => go({ kind: "new" }) }),
       button(t("generator"), { icon: "quill", onClick: () => go({ kind: "generator" }) }),
+      button(t("transfer"), { icon: "chest", onClick: () => go({ kind: "transfer" }) }),
       button(t("settings"), { icon: "gear", onClick: () => go({ kind: "settings" }) }),
       button(t("lock"), { icon: "lock", variant: "ghost", onClick: () => void api.lock() }),
     ),
@@ -122,6 +124,8 @@ export function showVault(opts: { rollbackWarning?: boolean } = {}): void {
         return mount(panel, h("h2", { class: "title" }, t("gen_title")), generatorPanel());
       case "settings":
         return mount(panel, settingsPanel(username, () => showVault()));
+      case "transfer":
+        return mount(panel, transferPanel(username, () => void refresh()));
     }
   }
 
@@ -370,6 +374,15 @@ export function showVault(opts: { rollbackWarning?: boolean } = {}): void {
   };
 
   void refresh().then(renderPanel);
+
+  // Cofre sem códigos (ex.: cópia com senha própria): avisa e aponta para Configurações.
+  // Vault without codes (e.g. copy with its own password): warn and point to Settings.
+  if (session.remainingCodes === 0) {
+    const dlg = modal(t("zero_codes_title"), [h("p", null, t("zero_codes_text"))], [
+      button(t("ok"), { onClick: () => dlg.close() }),
+      button(t("settings"), { icon: "gear", variant: "primary", onClick: () => (dlg.close(), go({ kind: "settings" })) }),
+    ]);
+  }
 
   if (opts.rollbackWarning) {
     const dlg = modal(t("rollback_title"), [h("p", null, t("rollback_text"))], [button(t("ok"), { variant: "primary", onClick: () => dlg.close() })]);

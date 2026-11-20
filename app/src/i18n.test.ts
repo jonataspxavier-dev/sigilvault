@@ -25,7 +25,7 @@ describe("i18n", () => {
   });
 
   it("todo código de erro do Rust tem tradução / every Rust error code is translated", () => {
-    const codes = ["invalid_credentials", "malformed_code", "tampered", "invalid_file", "weak_password", "invalid_generator_options", "not_found", "invalid_input", "no_codes_left", "io", "internal", "locked", "locked_out", "vault_exists", "clipboard"];
+    const codes = ["invalid_credentials", "malformed_code", "tampered", "invalid_file", "weak_password", "invalid_generator_options", "not_found", "invalid_input", "no_codes_left", "io", "internal", "locked", "locked_out", "vault_exists", "clipboard", "unsupported_import", "use_merge", "conflict", "file_too_large"];
     for (const c of codes) expect(Object.keys(dictionaries.pt)).toContain(`err_${c}`);
   });
 });
