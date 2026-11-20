@@ -24,6 +24,14 @@ pub fn open(app: &AppHandle) {
         let _ = w.set_focus();
         return;
     }
+    create(app);
+}
+
+/// Cria sempre uma janela nova, com rótulo novo. Usado logo após destruir a anterior, que pode
+/// ainda constar na lista enquanto fecha.
+/// Always creates a new window with a new label. Used right after destroying the previous one,
+/// which may still be listed while it closes.
+pub fn create(app: &AppHandle) {
     let label = format!("{PREFIX}{}", COUNTER.fetch_add(1, Ordering::Relaxed) + 1);
     let _ = WebviewWindowBuilder::new(app, label, WebviewUrl::App("index.html".into()))
         .title("SigilVault")
