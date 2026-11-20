@@ -8,7 +8,7 @@
 
 **SigilVault** é um gerenciador de senhas **local** para Windows. Ele guarda tudo criptografado no próprio computador, preenche senhas no navegador e em apps desktop e gera senhas fortes. Nada vai para a nuvem, a menos que você escolha.
 
-> Status: **Fase 1 em andamento**: núcleo em Rust com testes. Ainda não há interface.
+> Status: **Fase 2 em andamento**: o núcleo em Rust está pronto e o app desktop já cria, desbloqueia, recupera e edita o cofre.
 
 ### Visão geral
 
@@ -45,8 +45,8 @@ Apps desktop ◄──────────── Auto-Type (atalho) ──�
 
 ### Fases
 
-1. **Núcleo em Rust + testes** ← *atual*
-2. App desktop (Tauri): criar e desbloquear o cofre, CRUD, gerador, bandeja e bloqueio automático
+1. Núcleo em Rust + testes ✅
+2. **App desktop** ← *atual* (Tauri): criar e desbloquear o cofre, CRUD, gerador, bandeja e bloqueio automático
 3. Exportar e importar, backups locais e importação de outros gerenciadores
 4. Extensão + Native Messaging com pareamento seguro
 5. Navegador completo: preencher, balão "gerar ou só salvar" e aviso de salvar
@@ -56,11 +56,12 @@ Apps desktop ◄──────────── Auto-Type (atalho) ──�
 ### Desenvolvimento
 
 ```powershell
-cd core
-cargo test
+cargo test --workspace          # testes do núcleo e do app (Rust)
+cd app; npm install; npm test   # testes da interface
+npx tauri dev                   # abre o app em modo de desenvolvimento
 ```
 
-Requisitos: Rust estável (rustup) e Visual Studio Build Tools com C++.
+Requisitos: Rust estável (rustup), Node.js LTS e Visual Studio Build Tools com C++.
 
 ---
 
@@ -68,7 +69,7 @@ Requisitos: Rust estável (rustup) e Visual Studio Build Tools com C++.
 
 **SigilVault** is a **local** password manager for Windows. It keeps everything encrypted on your own computer, fills passwords in the browser and in desktop apps, and generates strong passwords. Nothing goes to the cloud unless you choose so.
 
-> Status: **Phase 1 in progress**: Rust core with tests. No user interface yet.
+> Status: **Phase 2 in progress**: the Rust core is done and the desktop app already creates, unlocks, recovers and edits the vault.
 
 ### Overview
 
@@ -105,8 +106,8 @@ Desktop apps ◄──────────── Auto-Type (hotkey) ── T
 
 ### Phases
 
-1. **Rust core + tests** ← *current*
-2. Desktop app (Tauri): create and unlock the vault, CRUD, generator, tray and auto-lock
+1. Rust core + tests ✅
+2. **Desktop app** ← *current* (Tauri): create and unlock the vault, CRUD, generator, tray and auto-lock
 3. Export and import, local backups and import from other managers
 4. Extension + Native Messaging with secure pairing
 5. Full browser support: fill, "generate or just save" popup and save prompt
@@ -116,8 +117,9 @@ Desktop apps ◄──────────── Auto-Type (hotkey) ── T
 ### Development
 
 ```powershell
-cd core
-cargo test
+cargo test --workspace          # core and app tests (Rust)
+cd app; npm install; npm test   # UI tests
+npx tauri dev                   # opens the app in development mode
 ```
 
-Requirements: stable Rust (rustup) and Visual Studio Build Tools with C++.
+Requirements: stable Rust (rustup), Node.js LTS and Visual Studio Build Tools with C++.
