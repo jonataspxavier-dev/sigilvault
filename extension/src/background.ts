@@ -8,6 +8,7 @@ import { HOST_NAME, type MessageSender, ext } from "./ext";
 import { t } from "./i18n";
 import { indexedDbStore } from "./keystore";
 import { type Pake, loadPake } from "./pake";
+import { Router } from "./router";
 
 const api = ext();
 
@@ -54,6 +55,34 @@ const controller = new Controller({
     // Updates the popup if open (with no popup nobody listens: error ignored).
     api.runtime.sendMessage({ type: "view", view }).catch(() => undefined);
   },
+});
+
+// Fase 5: páginas e balões. / Phase 5: pages and balloons.
+const router = new Router({
+  request: (op, extra, timeoutMs) => controller.request(op, extra, timeoutMs),
+  sendToFrame: (tabId, frameId, msg) => api.tabs.sendMessage(tabId, msg, { frameId }),
+  openApp: () => controller.openApp(),
+  uiUrl: api.runtime.getURL("ui/frame.html"),
+});
+api.tabs.onRemoved.addListener((tabId) => router.tabClosed(tabId));
+
+/** Mensagem do script de uma página (não de uma página da extensão). / Message from a page script (not from an extension page). */
+function fromPageScript(sender: MessageSender): boolean {
+  return sender.id === api.runtime.id && !!sender.tab && !(sender.url ?? "").startsWith(api.runtime.getURL(""));
+}
+
+/** Mensagem do balão (página da extensão dentro de uma aba). / Message from the balloon (extension page inside a tab). */
+function fromBalloon(sender: MessageSender): boolean {
+  return sender.id === api.runtime.id && !!sender.tab && (sender.url ?? "").startsWith(api.runtime.getURL("ui/frame.html"));
+}
+
+api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (typeof msg !== "object" || msg === null) return;
+  const m = msg as Record<string, unknown>;
+  const route = fromBalloon(sender) ? router.fromUi(m, sender) : fromPageScript(sender) ? router.fromContent(m, sender) : null;
+  if (!route) return;
+  route.then(sendResponse, () => sendResponse({ error: "internal" }));
+  return true;
 });
 
 /** Só o nosso popup pode dar ordens (nenhuma página e nenhuma outra extensão).

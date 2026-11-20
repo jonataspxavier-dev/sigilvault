@@ -32,6 +32,10 @@ const CHROMIUM_KEY =
 // Igual a `sigilvault_ipc::FIREFOX_EXTENSION_ID`. / Same as `sigilvault_ipc::FIREFOX_EXTENSION_ID`.
 const FIREFOX_ID = "sigilvault@sigilvault.app";
 
+// Fase 5: o script roda só em páginas web (http/https), nunca em arquivos locais.
+// Phase 5: the script runs only on web pages (http/https), never on local files.
+const WEB = ["http://*/*", "https://*/*"];
+
 const icons = (state) => Object.fromEntries(["16", "32", "48", "128"].map((s) => [s, `icons/${state}/${s}x${s}.png`]));
 
 function manifest(target) {
@@ -41,9 +45,13 @@ function manifest(target) {
     description: "__MSG_ext_description__",
     default_locale: "en",
     version: pkg.version,
-    // Só o Native Messaging: nenhum acesso a páginas nesta fase.
-    // Native Messaging only: no access to web pages in this phase.
     permissions: ["nativeMessaging"],
+    // Páginas web: para achar os formulários, mostrar o ícone e oferecer salvar (aprovado pelo usuário).
+    // Web pages: to find forms, show the icon and offer to save (approved by the user).
+    host_permissions: WEB,
+    content_scripts: [{ matches: WEB, js: ["content.js"], all_frames: true, run_at: "document_idle" }],
+    // Só a página do balão pode entrar nos sites (como iframe). / Only the balloon page may enter sites (as an iframe).
+    web_accessible_resources: [{ resources: ["ui/frame.html", "assets/*"], matches: WEB }],
     icons: icons("logo"),
     action: { default_popup: "popup/popup.html", default_title: "SigilVault", default_icon: icons("off") },
     // 'wasm-unsafe-eval' permite só WebAssembly (o pareamento), não eval de JavaScript.
@@ -88,14 +96,28 @@ await build({
   },
 });
 
-// 3. Popup + arquivos estáticos (ícones, textos do manifesto). / Popup + static files (icons, manifest strings).
+// 2b. Script das páginas: também um arquivo só. / Page script: also a single file.
+await build({
+  configFile: false,
+  logLevel: "warn",
+  publicDir: false,
+  build: {
+    outDir: common,
+    emptyOutDir: false,
+    target: "es2022",
+    minify: false,
+    lib: { entry: join(root, "src", "content", "content.ts"), formats: ["iife"], name: "SigilVaultContent", fileName: () => "content.js" },
+  },
+});
+
+// 3. Popup + balão + arquivos estáticos (ícones, textos do manifesto). / Popup + balloon + static files.
 await build({
   configFile: false,
   logLevel: "warn",
   root: join(root, "src"),
   base: "./",
   publicDir: join(root, "public"),
-  build: { outDir: common, emptyOutDir: false, target: "es2022", minify: false, rollupOptions: { input: join(root, "src", "popup", "popup.html") } },
+  build: { outDir: common, emptyOutDir: false, target: "es2022", minify: false, rollupOptions: { input: [join(root, "src", "popup", "popup.html"), join(root, "src", "ui", "frame.html")] } },
 });
 
 // 4. Uma pasta por família de navegador. / One folder per browser family.

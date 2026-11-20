@@ -143,14 +143,14 @@ class Link {
   }
 
   /** Pedido criptografado; espera a resposta com o mesmo `rid`. / Encrypted request; awaits the reply with the same `rid`. */
-  call(op: string): Promise<Msg> {
+  call(op: string, extra: Msg = {}, timeoutMs = REPLY_TIMEOUT_MS): Promise<Msg> {
     const channel = this.channel;
     if (this.closed || !channel) return Promise.reject(new LinkError("closed"));
     const rid = this.nextRid++;
     return new Promise((resolve, reject) => {
-      const w = this.waiter(REPLY_TIMEOUT_MS, resolve, reject, () => this.boxWaiters.delete(rid));
+      const w = this.waiter(timeoutMs, resolve, reject, () => this.boxWaiters.delete(rid));
       this.boxWaiters.set(rid, w);
-      const bytes = new TextEncoder().encode(JSON.stringify({ op, rid }));
+      const bytes = new TextEncoder().encode(JSON.stringify({ ...extra, op, rid }));
       this.outbox = this.outbox.then(async () => {
         const sealed = await (await channel).seal(bytes);
         if (!this.closed) this.port.postMessage({ t: "box", c: toHex(sealed) });
@@ -385,6 +385,22 @@ export class Controller {
       this.update({ pairing: "idle", error: null });
       return this.getView();
     });
+  }
+
+  /** Operação do navegador no app (Fase 5). Conecta e autentica antes, se preciso.
+   *  Sem pareamento, devolve `{ error: "not_paired" }`.
+   *  Browser operation in the app (Phase 5). Connects and authenticates first, if needed.
+   *  Without pairing, returns `{ error: "not_paired" }`. */
+  async request(op: string, extra: Msg = {}, timeoutMs = REPLY_TIMEOUT_MS): Promise<Msg> {
+    if (!this.link?.channel) await this.refresh();
+    const link = this.link;
+    if (!this.stored) return { error: "not_paired" };
+    if (!link?.channel) return { error: this.view.health === "ok" ? "not_connected" : this.view.health };
+    try {
+      return await link.call(op, extra, timeoutMs);
+    } catch {
+      return { error: "not_connected" };
+    }
   }
 
   /** Mostra a janela do app (para desbloquear). / Shows the app window (to unlock). */

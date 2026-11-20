@@ -21,7 +21,10 @@ export interface PortLike {
 export interface MessageSender {
   id?: string;
   url?: string;
-  tab?: unknown;
+  /** Origem do quadro, dada pelo navegador (Chrome/Brave/Opera). / Frame origin, given by the browser. */
+  origin?: string;
+  frameId?: number;
+  tab?: { id?: number; url?: string };
 }
 
 interface ExtApi {
@@ -34,6 +37,10 @@ interface ExtApi {
     onMessage: EventOf<(msg: unknown, sender: MessageSender, sendResponse: (r?: unknown) => void) => boolean | void>;
     onStartup: EventOf<() => void>;
     onInstalled: EventOf<() => void>;
+  };
+  tabs: {
+    sendMessage(tabId: number, msg: unknown, options?: { frameId?: number }): Promise<unknown>;
+    onRemoved: EventOf<(tabId: number) => void>;
   };
   action: {
     setIcon(details: { path: Record<string, string> }): Promise<void>;
