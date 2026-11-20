@@ -1,0 +1,13 @@
+[package]
+name = "sigilvault-ipc"
+version = "0.1.0"
+edition = "2024"
+description = "Pipe protegido e verificação de processos entre o app e o host do Native Messaging / Protected pipe and process checks between the app and the Native Messaging host"
+license = "UNLICENSED"
+publish = false
+
+[dependencies]
+sha2 = "0.11.1"
+
+[target."cfg(windows)".dependencies]
+windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_Security", "Win32_Security_Authorization", "Win32_Security_Cryptography", "Win32_Security_Cryptography_Catalog", "Win32_Security_Cryptography_Sip", "Win32_Security_WinTrust", "Win32_Storage_FileSystem", "Win32_System_IO", "Win32_System_Pipes", "Win32_System_Threading"] }
