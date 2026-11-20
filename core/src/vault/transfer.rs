@@ -37,6 +37,10 @@ pub(crate) struct PortableItem {
     /// Senhas anteriores (mais antiga primeiro). / Previous passwords (oldest first).
     #[serde(default)]
     history: Vec<PortableHistory>,
+    #[serde(default)]
+    app_path: String,
+    #[serde(default)]
+    app_signer: Option<String>,
 }
 
 /// Senha anterior em forma portátil. / Previous password in portable form.
@@ -53,8 +57,13 @@ impl PortableItem {
     fn fingerprint(&self) -> [u8; 32] {
         let mut h = Sha256::new();
         for part in [
-            if self.kind == ItemKind::Login { "login" } else { "note" },
+            match self.kind {
+                ItemKind::Login => "login",
+                ItemKind::SecureNote => "note",
+                ItemKind::Program => "program",
+            },
             self.title.trim(),
+            self.app_path.trim(),
             self.username.trim(),
             self.url.trim(),
             self.password.as_deref().unwrap_or(""),
@@ -80,6 +89,8 @@ impl PortableItem {
             updated_at: ts,
             match_subdomains: item.match_subdomains,
             history: Vec::new(),
+            app_path: item.app_path.clone(),
+            app_signer: item.app_signer.clone(),
         }
     }
 }
@@ -141,6 +152,8 @@ impl Vault {
                         .rev()
                         .map(|(changed_at, p)| PortableHistory { password: p.to_string(), changed_at })
                         .collect(),
+                    app_path: i.app_path.clone(),
+                    app_signer: i.app_signer.clone(),
                 })
             })
             .collect()
@@ -171,6 +184,8 @@ impl Vault {
                     Ok(super::HistoryEntry { password, changed_at: h.changed_at })
                 })
                 .collect::<Result<Vec<_>>>()?,
+            app_path: p.app_path.clone(),
+            app_signer: p.app_signer.clone(),
         })
     }
 
@@ -312,13 +327,17 @@ impl Vault {
         let io = |_| Error::InvalidFormat("csv");
         w.write_record(crate::import::SIGILVAULT_CSV_HEADER).map_err(io)?;
         for p in self.portable_items()? {
-            let kind = if p.kind == ItemKind::Login { "login" } else { "secure_note" };
+            let kind = match p.kind {
+                ItemKind::Login => "login",
+                ItemKind::SecureNote => "secure_note",
+                ItemKind::Program => "program",
+            };
             let tags = p.tags.join(", ");
             w.write_record([
                 kind,
                 &p.title,
                 &p.username,
-                &p.url,
+                if p.kind == ItemKind::Program { &p.app_path } else { &p.url },
                 p.password.as_deref().unwrap_or(""),
                 p.notes.as_deref().unwrap_or(""),
                 &tags,

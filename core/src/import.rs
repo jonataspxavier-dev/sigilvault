@@ -116,7 +116,13 @@ impl Raw {
         item.kind = kind;
         item.title = title;
         item.username = self.username.trim().to_owned();
-        item.url = self.url.trim().to_owned();
+        // Programa: no CSV do SigilVault, a coluna "url" traz o caminho do executável.
+        // Program: in the SigilVault CSV, the "url" column carries the executable path.
+        if kind == ItemKind::Program {
+            item.app_path = self.url.trim().to_owned();
+        } else {
+            item.url = self.url.trim().to_owned();
+        }
         item.tags = self.tags.iter().map(|t| t.trim().to_owned()).filter(|t| !t.is_empty()).collect();
         item.password = (!self.password.is_empty()).then(|| self.password.to_string());
         item.notes = (!self.notes.is_empty()).then(|| self.notes.to_string());
@@ -191,7 +197,11 @@ fn parse_csv(text: &str) -> Result<Parsed> {
         let mut raw = Raw::default();
         match format {
             Format::SigilVaultCsv => {
-                raw.kind = Some(if get("kind") == "secure_note" { ItemKind::SecureNote } else { ItemKind::Login });
+                raw.kind = Some(match get("kind").as_str() {
+                    "secure_note" => ItemKind::SecureNote,
+                    "program" => ItemKind::Program,
+                    _ => ItemKind::Login,
+                });
                 raw.title = get("title");
                 raw.username = get("username");
                 raw.url = get("url");

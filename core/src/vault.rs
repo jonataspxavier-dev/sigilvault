@@ -60,6 +60,9 @@ pub enum ItemKind {
     Login,
     /// Nota segura. / Secure note.
     SecureNote,
+    /// Programa do computador (Auto-Type): identificado pelo executável, não pelo título.
+    /// Desktop program (Auto-Type): identified by its executable, not by the title.
+    Program,
 }
 
 /// Senha anterior de um item (cifrada). / Previous password of an item (encrypted).
@@ -96,6 +99,13 @@ pub struct Item {
     #[zeroize(skip)]
     #[serde(default)]
     history: Vec<HistoryEntry>,
+    /// Programa: caminho completo do executável. / Program: full executable path.
+    #[serde(default)]
+    app_path: String,
+    /// Programa: SHA-256 do certificado de quem assinou o executável (hex), se assinado.
+    /// Program: SHA-256 of the executable signer's certificate (hex), if signed.
+    #[serde(default)]
+    app_signer: Option<String>,
 }
 
 impl Item {
@@ -147,6 +157,14 @@ impl Item {
     pub fn history_len(&self) -> usize {
         self.history.len()
     }
+    /// Programa: caminho do executável. / Program: executable path.
+    pub fn app_path(&self) -> &str {
+        &self.app_path
+    }
+    /// Programa: assinatura esperada (hex). / Program: expected signature (hex).
+    pub fn app_signer(&self) -> Option<&str> {
+        self.app_signer.as_deref()
+    }
     /// Origem do endereço salvo, se for um site válido. / Origin of the saved address, if it is a valid site.
     pub fn origin(&self) -> Option<crate::Origin> {
         crate::Origin::parse(&self.url)
@@ -174,6 +192,10 @@ pub struct NewItem {
     /// Aceitar subdomínios. / Accept subdomains.
     #[zeroize(skip)]
     pub match_subdomains: bool,
+    /// Programa: caminho do executável. / Program: executable path.
+    pub app_path: String,
+    /// Programa: assinatura (hex). / Program: signature (hex).
+    pub app_signer: Option<String>,
 }
 
 impl NewItem {
@@ -216,6 +238,10 @@ pub struct ItemUpdate {
     /// Aceitar subdomínios. / Accept subdomains.
     #[zeroize(skip)]
     pub match_subdomains: bool,
+    /// Programa: caminho do executável. / Program: executable path.
+    pub app_path: String,
+    /// Programa: assinatura (hex). / Program: signature (hex).
+    pub app_signer: Option<String>,
 }
 
 /// Chave pública de um código, guardada no corpo cifrado.
@@ -639,6 +665,8 @@ impl Vault {
             updated_at: ts,
             match_subdomains: new.match_subdomains,
             history: Vec::new(),
+            app_path: new.app_path.trim().to_owned(),
+            app_signer: new.app_signer.clone(),
         };
         self.body.items.push(item);
         Ok(id)
@@ -693,6 +721,20 @@ impl Vault {
             .collect()
     }
 
+    /// Programas salvos para este executável (comparação sem diferenciar maiúsculas e com
+    /// barras normalizadas). / Programs saved for this executable (case-insensitive, normalized slashes).
+    pub fn programs_for(&self, exe_path: &str) -> Vec<&Item> {
+        let wanted = normalize_path(exe_path);
+        if wanted.is_empty() {
+            return Vec::new();
+        }
+        self.body
+            .items
+            .iter()
+            .filter(|i| i.kind == ItemKind::Program && i.password.is_some() && normalize_path(&i.app_path) == wanted)
+            .collect()
+    }
+
     /// Logins que podem ser preenchidos nesta página (regra de [`crate::Origin::fills`]).
     /// Logins that may be filled on this page (rule of [`crate::Origin::fills`]).
     pub fn logins_for(&self, page: &crate::Origin) -> Vec<&Item> {
@@ -742,6 +784,8 @@ impl Vault {
         }
         push_history(item, archived);
         item.match_subdomains = update.match_subdomains;
+        item.app_path = update.app_path.trim().to_owned();
+        item.app_signer.clone_from(&update.app_signer);
         if let Some(n) = notes {
             item.notes = n;
         }
@@ -764,6 +808,11 @@ impl Vault {
         self.body.items[ia].password = pb;
         self.body.items[ib].password = pa;
     }
+}
+
+/// Caminho de executável para comparar: minúsculas e barras invertidas. / Executable path for comparing.
+pub fn normalize_path(path: &str) -> String {
+    path.trim().replace('/', "\\").to_lowercase()
 }
 
 /// Guarda uma senha antiga, mantendo só as [`MAX_HISTORY`] mais novas.
