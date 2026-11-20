@@ -22,6 +22,8 @@ pub struct Paths {
     pub revision_guard: PathBuf,
     /// Pasta dos backups automáticos. / Automatic backups folder.
     pub backups: PathBuf,
+    /// Extensões pareadas (chaves protegidas pela DPAPI). / Paired extensions (DPAPI-protected keys).
+    pub pairings: PathBuf,
 }
 
 impl Paths {
@@ -36,6 +38,7 @@ impl Paths {
             attempts: dir.join("attempts.json"),
             revision_guard: dir.join("revision.guard"),
             backups: dir.join("backups"),
+            pairings: dir.join("pairings.json"),
         })
     }
 }

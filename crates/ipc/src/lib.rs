@@ -28,6 +28,20 @@ pub const APP_EXE: &str = "sigilvault-app.exe";
 /// Nome do host registrado nos navegadores. / Host name registered in the browsers.
 pub const HOST_NAME: &str = "app.sigilvault.host";
 
+/// ID da extensão no Chrome, Brave e Opera: vem da chave pública em `extension/manifest.json`
+/// (campo "key"). Na publicação na loja (fase 7), o ID da loja entra nesta lista.
+/// Extension ID in Chrome, Brave and Opera: comes from the public key in
+/// `extension/manifest.json` ("key" field). When published to the store (phase 7), the store ID
+/// joins this list.
+pub const CHROMIUM_EXTENSION_ID: &str = "jclandjcanimgllfngognekhhhnomimf";
+/// ID da extensão no Firefox (`browser_specific_settings.gecko.id`). / Extension ID in Firefox.
+pub const FIREFOX_EXTENSION_ID: &str = "sigilvault@sigilvault.app";
+
+/// Quem pode falar com o app, no formato que o host repassa. / Who may talk to the app, in the host's format.
+pub fn allowed_caller(caller: &str) -> bool {
+    caller == format!("chrome-extension://{CHROMIUM_EXTENSION_ID}/") || caller == format!("firefox:{FIREFOX_EXTENSION_ID}")
+}
+
 /// Maior mensagem entre extensão e app (64 KiB): bem acima do necessário, e corta abusos.
 /// Largest message between extension and app (64 KiB): well above what is needed, and cuts abuse.
 pub const MAX_MESSAGE: usize = 64 * 1024;

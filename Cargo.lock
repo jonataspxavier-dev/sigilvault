@@ -3925,10 +3925,13 @@ checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
 name = "sigilvault-app"
 version = "0.1.0"
 dependencies = [
+ "getrandom 0.4.3",
  "serde",
  "serde_json",
  "sha2 0.11.1",
  "sigilvault-core",
+ "sigilvault-ipc",
+ "sigilvault-pairing",
  "tauri",
  "tauri-build",
  "tauri-plugin-dialog",

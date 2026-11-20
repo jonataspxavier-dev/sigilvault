@@ -3,6 +3,7 @@
 
 mod attempts;
 mod backups;
+mod bridge;
 mod commands;
 mod dialogs;
 mod rollback;
@@ -41,8 +42,13 @@ pub fn run() {
             // Debug builds only: alternative data folder, so tests never touch the real vault.
             #[cfg(debug_assertions)]
             let dir = std::env::var_os("SIGILVAULT_DATA_DIR").map(std::path::PathBuf::from).unwrap_or(dir);
-            app.manage(AppState::new(storage::Paths::new(&dir)?));
+            let paths = storage::Paths::new(&dir)?;
+            app.manage(bridge::Bridge::new(&paths));
+            app.manage(AppState::new(paths));
             tray::create(app.handle())?;
+
+            // Ponte com a extensão do navegador (pipe protegido). / Bridge with the browser extension (protected pipe).
+            bridge::start(app.handle());
 
             // Bloqueio por eventos do Windows. / Lock on Windows events.
             let handle = app.handle().clone();
@@ -96,6 +102,10 @@ pub fn run() {
             transfer::import_vault_file,
             transfer::list_backups,
             transfer::restore_backup,
+            bridge::commands::pairing_pending,
+            bridge::commands::cancel_pairing,
+            bridge::commands::list_pairings,
+            bridge::commands::remove_pairing,
         ])
         .build(tauri::generate_context!())
         .expect("falha ao iniciar o SigilVault / failed to start SigilVault");

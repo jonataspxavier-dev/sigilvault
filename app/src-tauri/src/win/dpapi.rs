@@ -16,9 +16,9 @@ fn blob(data: &[u8]) -> CRYPT_INTEGER_BLOB {
     CRYPT_INTEGER_BLOB { cbData: data.len() as u32, pbData: data.as_ptr() as *mut u8 }
 }
 
-fn run(data: &[u8], protect: bool) -> Option<Vec<u8>> {
+fn run(data: &[u8], label: &[u8], protect: bool) -> Option<Vec<u8>> {
     let input = blob(data);
-    let entropy = blob(ENTROPY);
+    let entropy = blob(label);
     let mut output = CRYPT_INTEGER_BLOB { cbData: 0, pbData: std::ptr::null_mut() };
     // SAFETY: as entradas apontam para fatias vivas durante a chamada; a saída é alocada pelo
     // Windows, copiada e liberada com LocalFree, como a documentação exige.
@@ -41,13 +41,24 @@ fn run(data: &[u8], protect: bool) -> Option<Vec<u8>> {
 
 /// Protege dados com a conta atual do Windows. / Protects data with the current Windows account.
 pub fn protect(data: &[u8]) -> Option<Vec<u8>> {
-    run(data, true)
+    run(data, ENTROPY, true)
 }
 
 /// Desfaz [`protect`]. Falha se o arquivo veio de outra conta ou foi alterado.
 /// Reverses [`protect`]. Fails if the file came from another account or was altered.
 pub fn unprotect(data: &[u8]) -> Option<Vec<u8>> {
-    run(data, false)
+    run(data, ENTROPY, false)
+}
+
+/// Como [`protect`], com um rótulo próprio: dados de um uso não abrem em outro.
+/// Like [`protect`], with its own label: data from one use does not open in another.
+pub fn protect_labeled(data: &[u8], label: &[u8]) -> Option<Vec<u8>> {
+    run(data, label, true)
+}
+
+/// Desfaz [`protect_labeled`] com o mesmo rótulo. / Reverses [`protect_labeled`] with the same label.
+pub fn unprotect_labeled(data: &[u8], label: &[u8]) -> Option<Vec<u8>> {
+    run(data, label, false)
 }
 
 #[cfg(test)]
@@ -61,5 +72,10 @@ mod tests {
         let last = bad.len() - 1;
         bad[last] ^= 1;
         assert!(super::unprotect(&bad).is_none());
+        // Rótulo diferente não abre. / A different label does not open.
+        let labeled = super::protect_labeled(b"x", b"a").unwrap();
+        assert_eq!(super::unprotect_labeled(&labeled, b"a").unwrap(), b"x");
+        assert!(super::unprotect_labeled(&labeled, b"b").is_none());
+        assert!(super::unprotect(&labeled).is_none());
     }
 }

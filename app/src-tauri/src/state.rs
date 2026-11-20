@@ -12,7 +12,7 @@ use crate::attempts::Attempts;
 use crate::rollback::{Codec, RevisionGuard};
 use crate::settings::Settings;
 use crate::storage::{Paths, atomic_write};
-use crate::{tray, win, window};
+use crate::{bridge, tray, win, window};
 
 /// Índice local do perfil: só o nome, para a tela de login. Nunca vai para exportações.
 /// Local profile index: only the name, for the login screen. Never goes into exports.
@@ -86,6 +86,14 @@ impl AppState {
     }
 }
 
+/// O cofre trancou ou abriu: atualiza o ícone da bandeja e avisa as extensões conectadas.
+/// Chamar sem o estado travado. / The vault locked or unlocked: updates the tray icon and tells
+/// connected extensions. Call without the state locked.
+pub fn announce_lock_state(app: &AppHandle, locked: bool) {
+    tray::set_locked(app, locked);
+    bridge::notify_status(app);
+}
+
 /// Bloqueia o cofre: apaga as chaves da memória, limpa a área de transferência (se ainda for a
 /// nossa senha), destrói a janela (WebView2) e troca o ícone da bandeja.
 /// Com `reopen`, abre uma janela nova já na tela de desbloqueio.
@@ -105,7 +113,7 @@ pub fn lock_app(app: &AppHandle, reopen: bool) {
             win::clipboard::clear_if_ours(win::watcher::hwnd(), &copied);
         }
     }
-    tray::set_locked(app, true);
+    announce_lock_state(app, true);
     window::destroy(app);
     if reopen {
         window::create(app);

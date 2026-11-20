@@ -64,6 +64,10 @@ impl OwnerOnly {
     }
 }
 
+// SAFETY: o descritor é memória só nossa (LocalAlloc), lida pelo Windows e liberada uma vez no Drop.
+// SAFETY: the descriptor is memory we own (LocalAlloc), read by Windows and freed once on Drop.
+unsafe impl Send for OwnerOnly {}
+
 impl Drop for OwnerOnly {
     fn drop(&mut self) {
         // SAFETY: memória alocada pelo Windows com LocalAlloc. / Memory allocated by Windows with LocalAlloc.

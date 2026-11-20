@@ -24,7 +24,7 @@ pub mod crypto;
 pub mod error;
 mod format;
 pub mod generator;
-mod hex;
+pub mod hex;
 pub mod import;
 pub mod recovery;
 pub mod strength;

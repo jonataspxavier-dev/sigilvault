@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "main",
-  "description": "Janela principal: só os comandos do SigilVault, nenhum plugin / Main window: only SigilVault commands, no plugins",
+  "description": "Janela principal: só os comandos do SigilVault e ouvir eventos do app, nenhum plugin / Main window: only SigilVault commands and listening to app events, no plugins",
   "windows": [
     "main-*"
   ],
@@ -31,6 +31,12 @@
     "allow-merge-vault",
     "allow-import-vault-file",
     "allow-list-backups",
-    "allow-restore-backup"
+    "allow-restore-backup",
+    "allow-pairing-pending",
+    "allow-cancel-pairing",
+    "allow-list-pairings",
+    "allow-remove-pairing",
+    "core:event:allow-listen",
+    "core:event:allow-unlisten"
   ]
 }

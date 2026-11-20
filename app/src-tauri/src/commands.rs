@@ -12,7 +12,7 @@ use zeroize::{Zeroize, ZeroizeOnDrop, Zeroizing};
 
 use crate::rollback::Check;
 use crate::settings::{GeneratorPrefs, Settings};
-use crate::state::{AppState, Inner, Profile, lock_app};
+use crate::state::{AppState, Inner, Profile, announce_lock_state, lock_app};
 use crate::storage::{atomic_write, sha256};
 use crate::{backups, tray, win};
 
@@ -189,7 +189,7 @@ pub fn create_vault(app: AppHandle, state: State<'_, AppState>, username: String
     inner.vault = Some(vault);
     persist(&mut inner, &state)?;
     drop(inner);
-    tray::set_locked(&app, false);
+    announce_lock_state(&app, false);
     Ok(codes_to_strings(&codes))
 }
 
@@ -227,7 +227,7 @@ pub fn unlock(app: AppHandle, state: State<'_, AppState>, password: String) -> C
     let dto = UnlockDto { rollback_warning, remaining_codes: vault.remaining_recovery_codes() };
     inner.vault = Some(vault);
     drop(inner);
-    tray::set_locked(&app, false);
+    announce_lock_state(&app, false);
     Ok(dto)
 }
 
@@ -265,7 +265,7 @@ pub fn recover(app: AppHandle, state: State<'_, AppState>, code: String, new_pas
     rekey_backups_and_persist(&mut inner, &state)?;
     Profile::save(&state.paths, &outcome.username);
     drop(inner);
-    tray::set_locked(&app, false);
+    announce_lock_state(&app, false);
     Ok(RecoverDto { username: outcome.username, remaining_codes: outcome.remaining_codes })
 }
 
@@ -505,6 +505,9 @@ mod tests {
         let mut granted: Vec<String> =
             cap["permissions"].as_array().unwrap().iter().map(|p| p.as_str().unwrap().to_owned()).collect();
         let mut expected: Vec<String> = COMMANDS.iter().map(|c| format!("allow-{}", c.replace('_', "-"))).collect();
+        // Única permissão além dos comandos: ouvir eventos (aviso de pareamento).
+        // Only permission besides the commands: listening to events (pairing notice).
+        expected.extend(["core:event:allow-listen".to_owned(), "core:event:allow-unlisten".to_owned()]);
         granted.sort();
         expected.sort();
         assert_eq!(granted, expected);
