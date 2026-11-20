@@ -43,6 +43,8 @@ export interface Item {
   hasNotes: boolean;
   createdAt: number;
   updatedAt: number;
+  matchSubdomains: boolean;
+  historyLen: number;
 }
 
 /** Em edição: `password`/`notes` ausentes = manter, "" = remover. / On edit: missing = keep, "" = remove. */
@@ -54,6 +56,7 @@ export interface ItemInput {
   tags: string[];
   password?: string;
   notes?: string;
+  matchSubdomains?: boolean;
 }
 
 export interface ImportResult {
@@ -96,6 +99,17 @@ export interface PairingEntry {
   createdAt: number;
   lastSeen: number;
   connected: boolean;
+  /** Sites liberados para preencher sem perguntar. / Sites allowed to fill without asking. */
+  sites: string[];
+}
+
+/** Um preenchimento feito pela extensão. / A fill made by the extension. */
+export interface FillEntry {
+  at: number;
+  browser: string;
+  origin: string;
+  title: string;
+  username: string;
 }
 
 /** Aviso do app sobre o pareamento. / App notice about pairing. */
@@ -139,5 +153,9 @@ export const api = {
   cancelPairing: () => invoke<void>("cancel_pairing"),
   listPairings: () => invoke<PairingEntry[]>("list_pairings"),
   removePairing: (id: string) => invoke<void>("remove_pairing", { id }),
+  // Fase 5. / Phase 5.
+  revokeSite: (id: string, site: string) => invoke<void>("revoke_site", { id, site }),
+  fillLog: () => invoke<FillEntry[]>("fill_log"),
+  revealHistory: (id: string) => invoke<{ changedAt: number; password: string }[]>("reveal_history", { id }),
   onPairing: (cb: (e: PairingEvent) => void) => listen<PairingEvent>("pairing", (e) => cb(e.payload)),
 };

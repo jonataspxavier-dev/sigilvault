@@ -35,11 +35,30 @@ function browsersSection(): HTMLElement {
               }
             },
           });
+          const sites = p.sites.map((site) => {
+            const revoke = button(t("set_sites_revoke"), {
+              variant: "ghost",
+              onClick: async () => {
+                try {
+                  await busy(revoke, () => api.revokeSite(p.id, site));
+                  await load();
+                } catch (ex) {
+                  err.show(errorMessage(ex));
+                }
+              },
+            });
+            return h("li", { class: "site" }, h("span", { class: "value" }, site), revoke);
+          });
           return h(
             "li",
-            { class: "pairing" },
-            h("div", null, h("strong", null, p.browser), h("div", { class: "muted" }, t("set_browsers_since", { date: since }), p.connected ? ` · ${t("set_browsers_connected")}` : "")),
-            remove,
+            { class: "pairing-block" },
+            h(
+              "div",
+              { class: "pairing" },
+              h("div", null, h("strong", null, p.browser), h("div", { class: "muted" }, t("set_browsers_since", { date: since }), p.connected ? ` · ${t("set_browsers_connected")}` : "")),
+              remove,
+            ),
+            sites.length ? h("div", { class: "sites" }, h("div", { class: "muted" }, t("set_sites_allowed")), h("ul", { class: "site-list" }, ...sites)) : null,
           );
         }),
       );
@@ -49,6 +68,25 @@ function browsersSection(): HTMLElement {
   };
   void load();
   return h("div", { class: "stack" }, h("p", { class: "muted" }, t("set_browsers_intro")), list, err.el);
+}
+
+/** Registro dos últimos preenchimentos feitos pelos navegadores. / Log of the latest fills made by the browsers. */
+function fillLogSection(): HTMLElement {
+  const list = h("ol", { class: "fill-log" });
+  const err = errorBox();
+  void api
+    .fillLog()
+    .then((entries) => {
+      if (entries.length === 0) return list.replaceChildren(h("li", { class: "muted" }, t("set_log_none")));
+      const locale = getLang() === "pt" ? "pt-BR" : "en-US";
+      list.replaceChildren(
+        ...entries.slice(0, 50).map((e) =>
+          h("li", null, h("span", { class: "muted" }, new Date(e.at * 1000).toLocaleString(locale)), " · ", h("strong", null, e.title), e.username ? ` (${e.username})` : "", " · ", e.origin, " · ", e.browser),
+        ),
+      );
+    })
+    .catch((ex: unknown) => err.show(errorMessage(ex)));
+  return h("div", { class: "stack" }, h("p", { class: "muted" }, t("set_log_intro")), list, err.el);
 }
 
 export function settingsPanel(username: string, onLanguageChange: () => void): HTMLElement {
@@ -142,6 +180,9 @@ export function settingsPanel(username: string, onLanguageChange: () => void): H
     divider(),
     h("h3", { class: "subtitle" }, t("set_browsers")),
     browsersSection(),
+    divider(),
+    h("h3", { class: "subtitle" }, t("set_log")),
+    fillLogSection(),
     divider(),
     h("h3", { class: "subtitle" }, t("set_about")),
     h("p", { class: "muted" }, t("about_text")),

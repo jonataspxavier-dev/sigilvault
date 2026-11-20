@@ -178,6 +178,31 @@ export function showVault(opts: { rollbackWarning?: boolean } = {}): void {
       cleanup.push(hide);
       rows.push(row(t("field_password"), value, toggle, button(t("copy"), { icon: "copy", iconOnly: true, onClick: copy("password") })));
     }
+    if (item.historyLen > 0) {
+      const list = h("ol", { class: "history" });
+      const show = h(
+        "button",
+        {
+          type: "button",
+          class: "link",
+          onClick: async () => {
+            try {
+              const entries = await api.revealHistory(item.id);
+              list.replaceChildren(
+                ...entries.map((e) => h("li", null, h("span", { class: "muted" }, new Date(e.changedAt * 1000).toLocaleString(getLang() === "pt" ? "pt-BR" : "en-US")), " ", h("span", { class: "value" }, coloredSecret(e.password)))),
+              );
+              show.remove();
+            } catch (e) {
+              toast(errorMessage(e));
+            }
+          },
+        },
+        t("show_history", { n: item.historyLen }),
+      );
+      // Some ao sair da tela. / Disappears when leaving the screen.
+      cleanup.push(() => list.replaceChildren());
+      rows.push(row(t("field_history"), h("div", { class: "value" }, show, list)));
+    }
     if (item.hasNotes) {
       const notes = h("div", { class: "notes" });
       const show = h(
@@ -247,6 +272,7 @@ export function showVault(opts: { rollbackWarning?: boolean } = {}): void {
     const title = textInput({ value: existing?.title, maxLength: 200 });
     const user = textInput({ value: existing?.username, autocomplete: "off", maxLength: 300 });
     const url = textInput({ value: existing?.url, placeholder: "https://", maxLength: 2000 });
+    const subdomains = h("input", { type: "checkbox", checked: existing?.matchSubdomains ?? false });
     const pw = passwordInput({ placeholder: existing?.hasPassword ? t("password_keep") : "", autocomplete: "new-password" });
     const removePw = h("input", { type: "checkbox" });
     const notes = h("textarea", { class: "input textarea", rows: 5, spellcheck: false, maxLength: 20000 });
@@ -298,7 +324,7 @@ export function showVault(opts: { rollbackWarning?: boolean } = {}): void {
       },
     });
 
-    const loginOnly = [field(t("field_username"), user), field(t("field_url"), url), h("div", { class: "field" }, h("span", { class: "field-label" }, t("field_password")), h("div", { class: "pw-line" }, pw.wrap, genBtn), existing?.hasPassword ? h("label", { class: "check small" }, removePw, h("span", null, t("remove_password"))) : null, genHost)];
+    const loginOnly = [field(t("field_username"), user), field(t("field_url"), url), h("label", { class: "check small" }, subdomains, h("span", null, t("match_subdomains"))), h("div", { class: "field" }, h("span", { class: "field-label" }, t("field_password")), h("div", { class: "pw-line" }, pw.wrap, genBtn), existing?.hasPassword ? h("label", { class: "check small" }, removePw, h("span", null, t("remove_password"))) : null, genHost)];
     const syncKind = () => loginOnly.forEach((el) => (el.hidden = kind.value !== "login"));
     kind.addEventListener("change", syncKind);
     syncKind();
@@ -327,6 +353,7 @@ export function showVault(opts: { rollbackWarning?: boolean } = {}): void {
         username: isLogin ? user.value.trim() : "",
         url: isLogin ? url.value.trim() : "",
         tags: parseTags(tags.value),
+        matchSubdomains: isLogin && subdomains.checked,
       };
       if (existing) {
         if (!isLogin || removePw.checked) input.password = existing.hasPassword ? "" : undefined;
