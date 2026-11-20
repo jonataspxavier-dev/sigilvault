@@ -32,4 +32,4 @@ pub use crypto::KdfParams;
 pub use error::{Error, Result};
 pub use generator::{GeneratorOptions, generate};
 pub use recovery::RecoveryCode;
-pub use vault::{Item, ItemId, ItemKind, NewItem, RecoveryOutcome, Vault};
+pub use vault::{Item, ItemId, ItemKind, ItemUpdate, NewItem, RecoveryOutcome, Vault};

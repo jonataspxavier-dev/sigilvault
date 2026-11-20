@@ -32,6 +32,17 @@ impl fmt::Display for ItemId {
     }
 }
 
+impl std::str::FromStr for ItemId {
+    type Err = Error;
+
+    /// Lê o ID em hexadecimal (como vem da interface).
+    /// Parses the hex ID (as it comes from the UI).
+    fn from_str(s: &str) -> Result<Self> {
+        let bytes = crate::hex::decode(s).ok_or(Error::ItemNotFound)?;
+        Ok(Self(bytes.try_into().map_err(|_| Error::ItemNotFound)?))
+    }
+}
+
 /// Tipo de item. / Item kind.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -142,6 +153,24 @@ impl NewItem {
         item.notes = Some(notes.into());
         item
     }
+}
+
+/// Alterações num item. Em `password` e `notes`: `None` mantém, `Some("")` remove, `Some(v)` troca.
+/// Changes to an item. For `password` and `notes`: `None` keeps, `Some("")` removes, `Some(v)` replaces.
+#[derive(Default, Zeroize, ZeroizeOnDrop)]
+pub struct ItemUpdate {
+    /// Título (obrigatório). / Title (required).
+    pub title: String,
+    /// Usuário. / Username.
+    pub username: String,
+    /// Endereço. / Address.
+    pub url: String,
+    /// Etiquetas. / Tags.
+    pub tags: Vec<String>,
+    /// Senha nova, se mudou. / New password, if changed.
+    pub password: Option<String>,
+    /// Notas novas, se mudaram. / New notes, if changed.
+    pub notes: Option<String>,
 }
 
 /// Chave pública de um código, guardada no corpo cifrado.
@@ -556,6 +585,44 @@ impl Vault {
         let pos = self.body.items.iter().position(|i| i.id == id).ok_or(Error::ItemNotFound)?;
         self.body.items.remove(pos);
         Ok(())
+    }
+
+    /// Edita um item. Tudo é validado e cifrado antes de mudar o estado.
+    /// Edits an item. Everything is validated and encrypted before state changes.
+    pub fn update_item(&mut self, id: ItemId, update: ItemUpdate) -> Result<()> {
+        if update.title.trim().is_empty() {
+            return Err(Error::InvalidInput("título vazio / empty title"));
+        }
+        self.item(id).ok_or(Error::ItemNotFound)?;
+        let reseal = |field: &str, value: &Option<String>| -> Result<Option<Option<Sealed>>> {
+            match value.as_deref() {
+                None => Ok(None),
+                Some("") => Ok(Some(None)),
+                Some(v) => Ok(Some(self.seal_field(&id, field, Some(v))?)),
+            }
+        };
+        let password = reseal(FIELD_PASSWORD, &update.password)?;
+        let notes = reseal(FIELD_NOTES, &update.notes)?;
+
+        let item = self.item_mut(id)?;
+        item.title = update.title.trim().to_owned();
+        item.username.clone_from(&update.username);
+        item.url.clone_from(&update.url);
+        item.tags.clone_from(&update.tags);
+        if let Some(p) = password {
+            item.password = p;
+        }
+        if let Some(n) = notes {
+            item.notes = n;
+        }
+        item.updated_at = now();
+        Ok(())
+    }
+
+    /// Identificador público do cofre (hexadecimal), usado pelo app para o contador de versão.
+    /// Public vault identifier (hex), used by the app for the version counter.
+    pub fn vault_id(&self) -> String {
+        crate::hex::encode(&self.vault_id)
     }
 
     #[cfg(test)]

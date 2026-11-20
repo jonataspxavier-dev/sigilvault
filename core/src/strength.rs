@@ -20,6 +20,12 @@ pub fn check_master_password(password: &str, username: &str) -> Result<()> {
     if estimate.score() >= MIN_SCORE { Ok(()) } else { Err(Error::WeakMasterPassword) }
 }
 
+/// Nota de 0 a 4 para o medidor de força da interface.
+/// Score from 0 to 4 for the UI strength meter.
+pub fn score(password: &str, username: &str) -> u8 {
+    zxcvbn(password, &[username]).score() as u8
+}
+
 /// Normaliza a senha em Unicode NFC, para que "é" digitado de jeitos diferentes gere a mesma chave.
 /// Normalizes the password to Unicode NFC, so "é" typed in different ways yields the same key.
 pub(crate) fn normalize(password: &str) -> Zeroizing<String> {

@@ -302,3 +302,49 @@ fn header_from_another_vault_is_rejected() {
     mixed.extend_from_slice(&a[body_start(&a)..]);
     assert!(matches!(Vault::open(&mixed, PW), Err(Error::Tampered)));
 }
+
+// ── Edição de itens / Item editing ────────────────────────────────
+
+#[test]
+fn update_item_keeps_replaces_or_removes_secrets() {
+    use sigilvault_core::{ItemId, ItemUpdate};
+    let (bytes, _) = sample_vault();
+    let mut v = Vault::open(&bytes, PW).unwrap();
+    let bank = v.search("banco")[0].id();
+    // O ID vai e volta como texto (como na interface). / The ID round-trips as text (as in the UI).
+    let parsed: ItemId = bank.to_string().parse().unwrap();
+    assert_eq!(parsed, bank);
+    assert!("xyz".parse::<ItemId>().is_err());
+
+    // None = mantém a senha; notas novas. / None = keep password; new notes.
+    let mut up = ItemUpdate::default();
+    up.title = "Banco Novo".into();
+    up.username = "ana2".into();
+    up.notes = Some("agência 0001".into());
+    v.update_item(bank, up).unwrap();
+    assert_eq!(bank_password(&v), "S3nh@-do-banco");
+    assert_eq!(v.item(bank).unwrap().title(), "Banco Novo");
+    assert_eq!(&*v.reveal_notes(bank).unwrap().unwrap(), "agência 0001");
+
+    // Some("") = remove. / Some("") = remove.
+    let mut up = ItemUpdate::default();
+    up.title = "Banco Novo".into();
+    up.password = Some(String::new());
+    v.update_item(bank, up).unwrap();
+    assert!(v.reveal_password(bank).unwrap().is_none());
+    assert!(v.reveal_notes(bank).unwrap().is_some());
+
+    let empty = ItemUpdate::default();
+    assert!(matches!(v.update_item(bank, empty), Err(Error::InvalidInput(_))));
+    let reopened = Vault::open(&v.to_bytes().unwrap(), PW).unwrap();
+    assert_eq!(reopened.item(bank).unwrap().username(), "");
+}
+
+#[test]
+fn vault_id_is_stable_and_public() {
+    let (bytes, _) = sample_vault();
+    let mut v = Vault::open(&bytes, PW).unwrap();
+    let id = v.vault_id();
+    assert_eq!(id.len(), 32);
+    assert_eq!(Vault::open(&v.to_bytes().unwrap(), PW).unwrap().vault_id(), id);
+}
