@@ -1,0 +1,28 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main",
+  "description": "Janela principal: só os comandos do SigilVault, nenhum plugin / Main window: only SigilVault commands, no plugins",
+  "windows": [
+    "main-*"
+  ],
+  "permissions": [
+    "allow-app-state",
+    "allow-password-strength",
+    "allow-create-vault",
+    "allow-unlock",
+    "allow-recover",
+    "allow-lock",
+    "allow-list-items",
+    "allow-add-item",
+    "allow-update-item",
+    "allow-delete-item",
+    "allow-reveal-password",
+    "allow-reveal-notes",
+    "allow-copy-field",
+    "allow-copy-text",
+    "allow-generate-password",
+    "allow-change-master-password",
+    "allow-regenerate-codes",
+    "allow-save-settings"
+  ]
+}
