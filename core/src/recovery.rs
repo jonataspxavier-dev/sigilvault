@@ -27,6 +27,8 @@ use crate::error::{Error, Result};
 pub const CODE_COUNT: usize = 10;
 /// Símbolos de dados por código (26 × 5 = 130 bits). / Data symbols per code (26 × 5 = 130 bits).
 const DATA_SYMBOLS: usize = 26;
+// Verificado na compilação: pelo menos 128 bits. / Checked at compile time: at least 128 bits.
+const _: () = assert!(DATA_SYMBOLS * 5 >= 128);
 /// Alfabeto Crockford base32: sem I, L, O, U para evitar confusão.
 /// Crockford base32 alphabet: no I, L, O, U to avoid confusion.
 const ALPHABET: &[u8; 32] = b"0123456789ABCDEFGHJKMNPQRSTVWXYZ";
@@ -233,11 +235,10 @@ mod tests {
     }
 
     #[test]
-    fn codes_are_distinct_and_have_130_bits() {
+    fn codes_are_distinct() {
         let a = RecoveryCode::generate().unwrap();
         let b = RecoveryCode::generate().unwrap();
         assert_ne!(a, b);
-        assert!(DATA_SYMBOLS * 5 >= 128);
     }
 
     #[test]

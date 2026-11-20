@@ -24,11 +24,11 @@ pub fn decode(s: &str) -> Option<Vec<u8>> {
             _ => None,
         }
     }
-    let b = s.as_bytes();
-    if b.len() % 2 != 0 {
+    let (pairs, rest) = s.as_bytes().as_chunks::<2>();
+    if !rest.is_empty() {
         return None;
     }
-    b.chunks_exact(2).map(|p| Some(val(p[0])? << 4 | val(p[1])?)).collect()
+    pairs.iter().map(|[hi, lo]| Some(val(*hi)? << 4 | val(*lo)?)).collect()
 }
 
 /// Serde para `Vec<u8>` como hexadecimal.
