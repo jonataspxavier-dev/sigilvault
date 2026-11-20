@@ -40,8 +40,8 @@ pub struct Inner {
     pub settings: Settings,
     pub attempts: Attempts,
     pub guard: RevisionGuard,
-    /// Sequência da última senha copiada, para limpar depois. / Last copied password sequence, to clear later.
-    pub clipboard_seq: Option<u32>,
+    /// Marca da última senha copiada, para limpar depois. / Mark of the last copied password, to clear later.
+    pub clipboard: Option<win::clipboard::Copied>,
 }
 
 /// Estado compartilhado pelos comandos. / State shared by commands.
@@ -57,7 +57,7 @@ impl AppState {
             settings: Settings::load(&paths.settings),
             attempts: Attempts::load(&paths.attempts, Instant::now()),
             guard: RevisionGuard::load(&paths.revision_guard, Codec::DPAPI),
-            clipboard_seq: None,
+            clipboard: None,
         };
         Self { paths, inner: Mutex::new(inner) }
     }
@@ -83,13 +83,13 @@ pub fn lock_app(app: &AppHandle, reopen: bool) {
         // Soltar o Vault dispara o zeroize das chaves e dos dados.
         // Dropping the Vault triggers zeroize of keys and data.
         drop(inner.vault.take());
-        if let Some(seq) = inner.clipboard_seq.take() {
-            win::clipboard::clear_if_unchanged(win::watcher::hwnd(), seq);
+        if let Some(copied) = inner.clipboard.take() {
+            win::clipboard::clear_if_ours(win::watcher::hwnd(), &copied);
         }
     }
     tray::set_locked(app, true);
     window::destroy(app);
     if reopen {
-        window::open(app);
+        window::create(app);
     }
 }
