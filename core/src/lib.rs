@@ -5,6 +5,7 @@
 
 pub mod crypto;
 pub mod error;
+pub mod generator;
 mod hex;
 
 pub use error::{Error, Result};
