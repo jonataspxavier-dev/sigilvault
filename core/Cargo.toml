@@ -25,11 +25,6 @@ thiserror = "2.0.21"
 unicode-normalization = "0.1.26"
 zxcvbn = "3.1.1"
 
-# Dependências otimizadas mesmo em debug/teste: o Argon2 sem otimização é ~10x mais lento.
-# Dependencies optimized even in debug/test: unoptimized Argon2 is ~10x slower.
-[profile.dev.package."*"]
-opt-level = 3
-
 [lints.rust]
 unsafe_code = "forbid"
 missing_docs = "warn"

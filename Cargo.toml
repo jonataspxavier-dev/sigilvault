@@ -1,0 +1,18 @@
+# Workspace Rust: núcleo + app desktop compartilham versões e a pasta target/.
+# Rust workspace: core + desktop app share versions and the target/ folder.
+[workspace]
+members = ["core", "app/src-tauri"]
+resolver = "3"
+
+# Dependências otimizadas mesmo em debug/teste: o Argon2 sem otimização é ~10x mais lento.
+# Dependencies optimized even in debug/test: unoptimized Argon2 is ~10x slower.
+[profile.dev.package."*"]
+opt-level = 3
+
+# Binário final pequeno e sem símbolos de depuração.
+# Small final binary without debug symbols.
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
