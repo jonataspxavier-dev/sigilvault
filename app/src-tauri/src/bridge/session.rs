@@ -27,7 +27,7 @@ use sigilvault_ipc::{HOST_EXE, MAX_MESSAGE, allowed_caller, frame, process, sign
 use sigilvault_pairing::Channel;
 use tauri::AppHandle;
 
-use super::fill::{self, FillLimiter};
+use super::fill;
 use crate::window;
 
 /// Limite de mensagens por janela de tempo. / Message limit per time window.
@@ -48,7 +48,6 @@ pub struct Conn {
     pub caller: String,
     pipe: Pipe,
     out: Mutex<Out>,
-    fills: Mutex<FillLimiter>,
 }
 
 impl Conn {
@@ -92,11 +91,6 @@ impl Conn {
 
     pub fn pairing_id(&self) -> Option<[u8; 16]> {
         self.out().pairing
-    }
-
-    /// Ainda cabe mais um preenchimento neste minuto? / Is one more fill allowed this minute?
-    pub fn allow_fill(&self, per_minute: usize) -> bool {
-        self.fills.lock().unwrap_or_else(|e| e.into_inner()).allow(per_minute)
     }
 
     /// Encerra a conexão (destrava a leitura pendente). / Ends the connection (unblocks the pending read).
@@ -146,7 +140,7 @@ pub fn serve(app: &AppHandle, pipe: Pipe, id: u64) {
         return;
     }
 
-    let conn = Arc::new(Conn { id, caller, pipe, out: Mutex::new(Out { channel: None, pairing: None }), fills: Mutex::new(FillLimiter::new()) });
+    let conn = Arc::new(Conn { id, caller, pipe, out: Mutex::new(Out { channel: None, pairing: None }) });
     let mut window_start = Instant::now();
     let mut count = 0u32;
     while let Ok(Some(raw)) = frame::read(&conn.pipe, MAX_MESSAGE) {

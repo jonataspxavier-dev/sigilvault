@@ -70,6 +70,8 @@ struct Pending {
 struct BridgeInner {
     pairings: Pairings,
     log: FillLog,
+    /// Limite de preenchimentos por PAREAMENTO (reconectar não zera). / Fill limit per PAIRING (reconnecting does not reset it).
+    fill_limits: std::collections::HashMap<[u8; 16], fill::FillLimiter>,
     pending: Option<Pending>,
     conns: Vec<Weak<Conn>>,
     last_pair_start: Option<Instant>,
@@ -88,6 +90,7 @@ impl Bridge {
             inner: Mutex::new(BridgeInner {
                 pairings: Pairings::load(&paths.pairings),
                 log: FillLog::load(&paths.fill_log),
+                fill_limits: std::collections::HashMap::new(),
                 pending: None,
                 conns: Vec::new(),
                 last_pair_start: None,

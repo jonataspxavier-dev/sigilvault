@@ -10,5 +10,8 @@ export default defineConfig({
     include: process.env.SIGILVAULT_E2E ? ["src/**/*.e2e.test.ts"] : ["src/**/*.test.ts"],
     exclude: process.env.SIGILVAULT_E2E ? [] : ["src/**/*.e2e.test.ts"],
     testTimeout: process.env.SIGILVAULT_E2E ? 120_000 : 5_000,
+    hookTimeout: process.env.SIGILVAULT_E2E ? 60_000 : 10_000,
+    // Ponta a ponta: um arquivo por vez (todos usam o mesmo app). / End to end: one file at a time (all use the same app).
+    fileParallelism: !process.env.SIGILVAULT_E2E,
   },
 });

@@ -29,7 +29,7 @@ use crate::dialogs::{self, FillChoice};
 use crate::settings::{GeneratorPrefs, Settings};
 use crate::state::AppState;
 
-/// Preenchimentos por minuto, por conexão. / Fills per minute, per connection.
+/// Preenchimentos por minuto, por pareamento. / Fills per minute, per pairing.
 const FILLS_PER_MINUTE: usize = 20;
 const MAX_TEXT: usize = 1024;
 
@@ -79,12 +79,12 @@ pub fn logins(app: &AppHandle, req: &Value) -> Value {
 /// Entrega usuário e senha de um login, depois das checagens e (se preciso) da confirmação.
 /// Hands over a login's username and password, after the checks and (if needed) confirmation.
 pub fn fill(app: &AppHandle, conn: &Conn, req: &Value) -> Value {
-    if !conn.allow_fill(FILLS_PER_MINUTE) {
+    let Some(pairing) = conn.pairing_id() else { return err("not_authenticated") };
+    if !app.state::<Bridge>().lock().fill_limits.entry(pairing).or_insert_with(FillLimiter::new).allow(FILLS_PER_MINUTE) {
         return err("rate_limited");
     }
     let Some((origin, top)) = origins(req) else { return err("bad_origin") };
     let Some(id) = text(req, "id").and_then(|s| s.parse::<ItemId>().ok()) else { return err("not_found") };
-    let Some(pairing) = conn.pairing_id() else { return err("not_authenticated") };
     let site = origin.to_canonical();
     let cross = origin != top;
 
@@ -264,7 +264,7 @@ pub fn strength(req: &Value) -> Value {
     json!({ "score": strength::score(&password, username) })
 }
 
-/// Janela deslizante de preenchimentos por conexão. / Sliding window of fills per connection.
+/// Janela deslizante de preenchimentos. / Sliding window of fills.
 pub struct FillLimiter(Vec<Instant>);
 
 impl FillLimiter {
