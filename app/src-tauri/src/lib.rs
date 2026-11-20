@@ -31,6 +31,10 @@ pub fn run() {
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| window::open(app)))
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
+            // Só em builds de depuração: pasta de dados alternativa, para testes não tocarem no cofre real.
+            // Debug builds only: alternative data folder, so tests never touch the real vault.
+            #[cfg(debug_assertions)]
+            let dir = std::env::var_os("SIGILVAULT_DATA_DIR").map(std::path::PathBuf::from).unwrap_or(dir);
             app.manage(AppState::new(storage::Paths::new(&dir)?));
             tray::create(app.handle())?;
 
