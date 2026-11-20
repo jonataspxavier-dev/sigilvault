@@ -6,7 +6,7 @@ use std::time::Instant;
 
 use serde::{Deserialize, Serialize};
 use sigilvault_core::Vault;
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager};
 
 use crate::attempts::Attempts;
 use crate::rollback::{Codec, RevisionGuard};
@@ -92,6 +92,9 @@ impl AppState {
 pub fn announce_lock_state(app: &AppHandle, locked: bool) {
     tray::set_locked(app, locked);
     bridge::notify_status(app);
+    // A janela segue o estado REAL do cofre, venha a mudança de onde vier.
+    // The window follows the vault's REAL state, wherever the change comes from.
+    let _ = app.emit("lock-state", locked);
 }
 
 /// Bloqueia o cofre: apaga as chaves da memória, limpa a área de transferência (se ainda for a

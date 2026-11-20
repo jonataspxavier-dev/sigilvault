@@ -2,6 +2,7 @@
 // UI entry point: reads app state and picks the screen.
 
 import "./styles.css";
+import { listen } from "@tauri-apps/api/event";
 import { api } from "./api";
 import { setLang } from "./i18n";
 import { session } from "./nav";
@@ -40,6 +41,16 @@ document.addEventListener("contextmenu", (e) => {
 });
 
 watchPairing();
+
+// O cofre trancou ou abriu por outro caminho: redesenha a partir do estado real, para nunca
+// mostrar "trancado" com o cofre aberto (nem o contrário). Ao abrir, só se a tela de desbloqueio
+// estiver à mostra: assim nunca apaga a tela dos códigos de recuperação logo após criar o cofre.
+// The vault locked or unlocked another way: redraws from the real state, so it never shows
+// "locked" with the vault open (nor the reverse). On unlock, only if the unlock screen is showing:
+// so it never wipes the recovery codes screen right after creating the vault.
+void listen<boolean>("lock-state", (e) => {
+  if (e.payload || document.querySelector('[data-screen="unlock"]')) void boot();
+});
 
 boot().catch((e) => {
   document.getElementById("app")!.textContent = errorMessage(e);

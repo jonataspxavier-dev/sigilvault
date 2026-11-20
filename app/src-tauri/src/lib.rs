@@ -26,6 +26,9 @@ const IDLE_POLL: Duration = Duration::from_secs(5);
 
 /// Inicia o app. / Starts the app.
 pub fn run() {
+    // Versão final: ninguém liga a depuração do WebView2 por variável de ambiente.
+    // Release build: nobody turns on WebView2 debugging through an environment variable.
+    win::system::harden_webview_env();
     // Sem relatórios de erro com dump de memória. / No error reports with memory dumps.
     win::system::exclude_from_error_reporting();
 

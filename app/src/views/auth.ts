@@ -172,7 +172,10 @@ export function showUnlock(state: AppState): void {
   });
 
   const forgot = h("button", { type: "button", class: "link", onClick: () => nav().recover() }, t("forgot"));
-  mount(root(), authCard(t("unlock_title"), state.username ? h("p", { class: "welcome" }, t("welcome_back", { name: state.username })) : null, form, forgot));
+  const card = authCard(t("unlock_title"), state.username ? h("p", { class: "welcome" }, t("welcome_back", { name: state.username })) : null, form, forgot);
+  // Marca usada para saber se esta tela está à mostra. / Marker used to know whether this screen is showing.
+  card.dataset.screen = "unlock";
+  mount(root(), card);
   if (state.retryAfterSecs > 0) startCountdown(state.retryAfterSecs);
   pw.input.focus();
 }

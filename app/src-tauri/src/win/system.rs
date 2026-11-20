@@ -34,3 +34,30 @@ pub fn exclude_from_error_reporting() {
     // SAFETY: the name is zero-terminated UTF-16 and lives during the call.
     unsafe { WerAddExcludedApplication(wide(name).as_ptr(), 0) };
 }
+
+/// Variáveis de ambiente que mudam o WebView2. Uma delas liga a porta de depuração remota, que
+/// permitiria a outro programa comandar a interface do app. Na versão final, são apagadas.
+/// Environment variables that change WebView2. One of them turns on the remote debugging port,
+/// which would let another program drive the app's UI. In the release build, they are removed.
+const WEBVIEW2_VARS: &[&str] = &[
+    "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS",
+    "WEBVIEW2_BROWSER_EXECUTABLE_FOLDER",
+    "WEBVIEW2_USER_DATA_FOLDER",
+    "WEBVIEW2_RELEASE_CHANNEL_PREFERENCE",
+    "WEBVIEW2_PIPE_FOR_SCRIPT_DEBUGGER",
+];
+
+/// Apaga as variáveis do WebView2 (só na versão final; em depuração os testes precisam delas).
+/// Chamar no começo de `run`, antes de qualquer outra thread existir.
+/// Removes the WebView2 variables (release build only; debug tests need them).
+/// Call at the start of `run`, before any other thread exists.
+pub fn harden_webview_env() {
+    if cfg!(debug_assertions) {
+        return;
+    }
+    for var in WEBVIEW2_VARS {
+        // SAFETY: chamado no começo do programa, com uma única thread; ninguém lê o ambiente ao mesmo tempo.
+        // SAFETY: called at program start, single-threaded; nobody reads the environment concurrently.
+        unsafe { std::env::remove_var(var) };
+    }
+}
