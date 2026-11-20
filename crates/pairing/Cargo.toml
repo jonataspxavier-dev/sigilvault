@@ -1,0 +1,25 @@
+[package]
+name = "sigilvault-pairing"
+version = "0.1.0"
+edition = "2024"
+description = "Pareamento (OPAQUE) e canal criptografado entre extensão e app / Pairing (OPAQUE) and encrypted channel between extension and app"
+license = "UNLICENSED"
+publish = false
+
+# rlib: usado pelo app. cdylib: compilado para WebAssembly e carregado pela extensão.
+# rlib: used by the app. cdylib: compiled to WebAssembly and loaded by the extension.
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[dependencies]
+# OPAQUE (auditado pela NCC Group). Sem "std": no WebAssembly o acaso vem do navegador.
+# OPAQUE (audited by NCC Group). No "std": in WebAssembly randomness comes from the browser.
+opaque-ke = { version = "4.0.1", default-features = false, features = ["ristretto255"] }
+rand_core = { version = "0.6.4", default-features = false }
+sha2 = { version = "0.10.9", default-features = false }
+hkdf = "0.12.4"
+aes-gcm = { version = "0.10.3", default-features = false, features = ["aes", "alloc"] }
+zeroize = { version = "1.9.2", features = ["derive"] }
+
+[dev-dependencies]
+getrandom = "0.4.1"

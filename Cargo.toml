@@ -1,7 +1,7 @@
 # Workspace Rust: núcleo + app desktop compartilham versões e a pasta target/.
 # Rust workspace: core + desktop app share versions and the target/ folder.
 [workspace]
-members = ["core", "app/src-tauri"]
+members = ["core", "app/src-tauri", "crates/pairing"]
 resolver = "3"
 
 # Dependências otimizadas mesmo em debug/teste: o Argon2 sem otimização é ~10x mais lento.
