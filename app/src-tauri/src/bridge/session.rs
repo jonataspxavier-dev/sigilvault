@@ -3,6 +3,7 @@
 //! Mensagens em claro (antes do canal) / Plain messages (before the channel):
 //! - `{"t":"hello"}` → `{"t":"hello","v":1}`
 //! - `{"t":"pair_start","browser":"…"}` → `{"t":"pair_started","expiresIn":120}`
+//! - `{"t":"pair_cancel"}` → `{"t":"pair_cancelled"}`
 //! - `{"t":"pair_login1","req":hex}` → `{"t":"pair_login1","resp":hex}`
 //! - `{"t":"pair_login2","fin":hex}` → `{"t":"paired","id":hex}`
 //! - `{"t":"auth","id":hex,"n":hex}` → `{"t":"auth","n":hex}` (abre o canal / opens the channel)
@@ -171,6 +172,10 @@ fn handle(app: &AppHandle, conn: &Arc<Conn>, msg: &Value) -> bool {
                 Ok(secs) => json!({ "t": "pair_started", "expiresIn": secs }),
                 Err(code) => error(code),
             }
+        }
+        "pair_cancel" => {
+            super::cancel_pending_of(app, conn.id);
+            json!({ "t": "pair_cancelled" })
         }
         "pair_login1" => match hex_bytes(msg, "req") {
             None => error("bad_message"),

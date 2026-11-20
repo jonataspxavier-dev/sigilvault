@@ -1,0 +1,243 @@
+/* Popup no mesmo tema do app: pedra, ferro, cera e ouro velho. Legibilidade primeiro.
+   Popup in the app's theme: stone, iron, wax and old gold. Readability first. */
+
+:root {
+  --stone-900: #121315;
+  --stone-800: #1a1b1e;
+  --stone-700: #222428;
+  --stone-600: #2c2f34;
+  --iron: #3d4148;
+  --rivet: #a3a8af;
+  --wax: #9b2226;
+  --wax-light: #c0393e;
+  --gold: #c9a45c;
+  --gold-light: #e6c784;
+  --parchment: #ece3cf;
+  --text: #e9e4d8;
+  --muted: #a39d90;
+  --danger: #e06a6a;
+  --ok: #8fbf7f;
+  --font-title: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+  --font-body: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Cascadia Mono", "Cascadia Code", Consolas, monospace;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  width: 340px;
+  margin: 0;
+  font: 14px/1.5 var(--font-body);
+  color: var(--text);
+  background: var(--stone-900);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 20px 14px;
+  background-image:
+    radial-gradient(circle at 8px 8px, var(--rivet) 0 1.6px, transparent 2.2px),
+    radial-gradient(circle at calc(100% - 8px) 8px, var(--rivet) 0 1.6px, transparent 2.2px),
+    radial-gradient(circle at 8px calc(100% - 8px), var(--rivet) 0 1.6px, transparent 2.2px),
+    radial-gradient(circle at calc(100% - 8px) calc(100% - 8px), var(--rivet) 0 1.6px, transparent 2.2px),
+    linear-gradient(180deg, var(--stone-700), var(--stone-800));
+  border: 1px solid var(--iron);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--iron);
+}
+
+.logo {
+  width: 32px;
+  height: 32px;
+}
+
+.brand-name {
+  font-family: var(--font-title);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--gold-light);
+  flex: 1;
+}
+
+.pill {
+  font-size: 12px;
+  padding: 2px 9px;
+  border-radius: 99px;
+  border: 1px solid var(--iron);
+  white-space: nowrap;
+}
+
+.pill-off {
+  color: var(--muted);
+}
+
+.pill-locked {
+  color: #ffd9d9;
+  background: rgba(155, 34, 38, 0.35);
+  border-color: var(--wax);
+}
+
+.pill-unlocked {
+  color: #f6e7c2;
+  background: rgba(201, 164, 92, 0.2);
+  border-color: var(--gold);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--parchment);
+}
+
+p {
+  margin: 0;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.ok {
+  color: var(--ok);
+}
+
+.footer {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field-label {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.code-input {
+  width: 100%;
+  padding: 9px 12px;
+  font: 600 20px var(--font-mono);
+  letter-spacing: 0.12em;
+  text-align: center;
+  color: var(--parchment);
+  background: var(--stone-900);
+  border: 1px solid var(--iron);
+  border-radius: 7px;
+  outline: none;
+}
+
+.code-input:focus {
+  border-color: var(--gold);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 14px;
+  font: 600 13px var(--font-body);
+  border-radius: 7px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn:focus-visible,
+.link:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  color: #fff4e0;
+  background: linear-gradient(180deg, var(--wax-light), var(--wax));
+  border-color: #6a1216;
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.btn-secondary {
+  color: var(--parchment);
+  background: linear-gradient(180deg, #4a4e55, var(--iron));
+  border-color: #2a2d31;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--gold);
+}
+
+.btn-ghost {
+  color: var(--parchment);
+  background: transparent;
+  border-color: var(--iron);
+}
+
+.btn-danger {
+  color: var(--danger);
+  background: transparent;
+  border-color: rgba(224, 106, 106, 0.45);
+}
+
+.link {
+  align-self: flex-start;
+  padding: 0;
+  font: 13px var(--font-body);
+  color: var(--muted);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.link:hover {
+  color: var(--danger);
+}
+
+.error {
+  padding: 8px 11px;
+  color: #ffd9d9;
+  background: rgba(155, 34, 38, 0.25);
+  border: 1px solid rgba(224, 106, 106, 0.45);
+  border-radius: 7px;
+}
+
+.divider {
+  width: 100%;
+  border: none;
+  border-top: 1px solid var(--iron);
+  margin: 2px 0;
+}

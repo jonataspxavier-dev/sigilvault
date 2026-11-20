@@ -185,15 +185,20 @@ pub fn cancel_pending(app: &AppHandle) {
     }
 }
 
-fn connection_closed(app: &AppHandle, id: u64) {
+/// Cancela o pareamento pendente se ele pertence a esta conexão. / Cancels the pending pairing if it belongs to this connection.
+fn cancel_pending_of(app: &AppHandle, conn_id: u64) {
     let bridge = app.state::<Bridge>();
     let mut b = bridge.lock();
-    b.conns.retain(|w| w.upgrade().is_some_and(|c| c.id != id));
-    if b.pending.as_ref().is_some_and(|p| p.owner == id) {
+    if b.pending.as_ref().is_some_and(|p| p.owner == conn_id) {
         b.pending = None;
         drop(b);
         emit_pairing(app, "cancelled", None);
     }
+}
+
+fn connection_closed(app: &AppHandle, id: u64) {
+    app.state::<Bridge>().lock().conns.retain(|w| w.upgrade().is_some_and(|c| c.id != id));
+    cancel_pending_of(app, id);
 }
 
 // ── Pareamento / Pairing ──────────────────────────────────────────
