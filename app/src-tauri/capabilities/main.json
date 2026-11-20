@@ -23,6 +23,14 @@
     "allow-generate-password",
     "allow-change-master-password",
     "allow-regenerate-codes",
-    "allow-save-settings"
+    "allow-save-settings",
+    "allow-export-vault",
+    "allow-export-csv",
+    "allow-import-file",
+    "allow-delete-imported-file",
+    "allow-merge-vault",
+    "allow-import-vault-file",
+    "allow-list-backups",
+    "allow-restore-backup"
   ]
 }

@@ -26,6 +26,11 @@ impl Profile {
         serde_json::from_slice(&std::fs::read(&paths.profile).ok()?).ok()
     }
 
+    /// Esquece o perfil (ao importar um cofre de outro PC). / Forgets the profile (when importing a vault from another PC).
+    pub fn remove(paths: &Paths) {
+        let _ = std::fs::remove_file(&paths.profile);
+    }
+
     pub fn save(paths: &Paths, username: &str) {
         if let Ok(bytes) = serde_json::to_vec(&Self { username: username.to_owned() }) {
             let _ = atomic_write(&paths.profile, &bytes);
@@ -42,6 +47,14 @@ pub struct Inner {
     pub guard: RevisionGuard,
     /// Marca da última senha copiada, para limpar depois. / Mark of the last copied password, to clear later.
     pub clipboard: Option<win::clipboard::Copied>,
+    /// Impressão (SHA-256) do arquivo do cofre como lido/gravado, para detectar conflitos.
+    /// Fingerprint (SHA-256) of the vault file as read/written, to detect conflicts.
+    pub disk_hash: Option<[u8; 32]>,
+    /// Já houve backup nesta sessão? / Was there a backup this session?
+    pub backed_up_this_session: bool,
+    /// Último arquivo importado (escolhido no diálogo nativo), para oferecer apagá-lo.
+    /// Last imported file (picked in the native dialog), to offer deleting it.
+    pub last_import: Option<std::path::PathBuf>,
 }
 
 /// Estado compartilhado pelos comandos. / State shared by commands.
@@ -58,6 +71,9 @@ impl AppState {
             attempts: Attempts::load(&paths.attempts, Instant::now()),
             guard: RevisionGuard::load(&paths.revision_guard, Codec::DPAPI),
             clipboard: None,
+            disk_hash: None,
+            backed_up_this_session: false,
+            last_import: None,
         };
         Self { paths, inner: Mutex::new(inner) }
     }
@@ -83,6 +99,8 @@ pub fn lock_app(app: &AppHandle, reopen: bool) {
         // Soltar o Vault dispara o zeroize das chaves e dos dados.
         // Dropping the Vault triggers zeroize of keys and data.
         drop(inner.vault.take());
+        inner.disk_hash = None;
+        inner.last_import = None;
         if let Some(copied) = inner.clipboard.take() {
             win::clipboard::clear_if_ours(win::watcher::hwnd(), &copied);
         }

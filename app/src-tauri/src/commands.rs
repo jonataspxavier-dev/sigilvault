@@ -13,7 +13,8 @@ use zeroize::{Zeroize, ZeroizeOnDrop, Zeroizing};
 use crate::rollback::Check;
 use crate::settings::{GeneratorPrefs, Settings};
 use crate::state::{AppState, Inner, Profile, lock_app};
-use crate::{tray, win};
+use crate::storage::{atomic_write, sha256};
+use crate::{backups, tray, win};
 
 // Lista de comandos (mesma do `build.rs`). / Command list (same as `build.rs`).
 include!("command_list.rs");
@@ -31,7 +32,7 @@ pub struct CmdError {
 }
 
 impl CmdError {
-    fn new(code: &'static str) -> Self {
+    pub(crate) fn new(code: &'static str) -> Self {
         Self { code, retry_after_secs: None }
     }
 
@@ -52,6 +53,7 @@ impl From<CoreError> for CmdError {
             CoreError::ItemNotFound => "not_found",
             CoreError::InvalidInput(_) => "invalid_input",
             CoreError::NoRecoveryCodesLeft => "no_codes_left",
+            CoreError::UnsupportedImport(_) => "unsupported_import",
             CoreError::Io(_) => "io",
             _ => "internal",
         })
@@ -64,22 +66,70 @@ impl From<std::io::Error> for CmdError {
     }
 }
 
-type CmdResult<T> = Result<T, CmdError>;
+pub(crate) type CmdResult<T> = Result<T, CmdError>;
 
-fn vault_mut(inner: &mut Inner) -> CmdResult<&mut Vault> {
+pub(crate) fn vault_mut(inner: &mut Inner) -> CmdResult<&mut Vault> {
     inner.vault.as_mut().ok_or(CmdError::new("locked"))
 }
 
-fn vault_ref(inner: &Inner) -> CmdResult<&Vault> {
+pub(crate) fn vault_ref(inner: &Inner) -> CmdResult<&Vault> {
     inner.vault.as_ref().ok_or(CmdError::new("locked"))
 }
 
-/// Salva o cofre e registra a revisão no guardião. / Saves the vault and records the revision.
-fn persist(inner: &mut Inner, state: &AppState) -> CmdResult<()> {
-    let Inner { vault, guard, .. } = inner;
+/// Salva o cofre e registra a revisão no guardião. Antes, confere se o arquivo no disco ainda é
+/// o que lemos: se outro programa (ou outro PC, via sincronização) mudou o cofre, recusa sobrescrever.
+/// Saves the vault and records the revision. First checks the file on disk is still what we read:
+/// if another program (or another PC, via sync) changed the vault, it refuses to overwrite.
+pub(crate) fn persist(inner: &mut Inner, state: &AppState) -> CmdResult<()> {
+    if let Some(expected) = inner.disk_hash
+        && std::fs::read(&state.paths.vault).ok().map(|b| sha256(&b)) != Some(expected)
+    {
+        return Err(CmdError::new("conflict"));
+    }
+    let Inner { vault, guard, disk_hash, .. } = inner;
     let vault = vault.as_mut().ok_or(CmdError::new("locked"))?;
-    vault.save(&state.paths.vault)?;
+    let bytes = vault.to_bytes()?;
+    atomic_write(&state.paths.vault, &bytes)?;
+    *disk_hash = Some(sha256(&bytes));
     guard.record(&vault.vault_id(), vault.revision());
+    Ok(())
+}
+
+/// Faz um backup antes de mudar o cofre: sempre, se a mudança for importante; senão, só na
+/// primeira mudança da sessão. Melhor esforço: falhar aqui não impede a edição.
+/// Makes a backup before changing the vault: always for important changes; otherwise only on the
+/// session's first change. Best effort: failing here does not block editing.
+pub(crate) fn backup_before(inner: &mut Inner, state: &AppState, important: bool) {
+    if !important && inner.backed_up_this_session {
+        return;
+    }
+    if let Some(vault) = inner.vault.as_ref()
+        && let Ok(bytes) = vault.create_backup()
+        && backups::write(&state.paths.backups, &bytes).is_ok()
+    {
+        inner.backed_up_this_session = true;
+    }
+}
+
+/// Depois de trocar a chave do cofre: troca a chave dos backups, salva o cofre e regrava os
+/// backups (os ilegíveis são apagados).
+/// After rotating the vault key: rotates the backup key, saves the vault and rewrites the
+/// backups (unreadable ones are deleted).
+pub(crate) fn rekey_backups_and_persist(inner: &mut Inner, state: &AppState) -> CmdResult<()> {
+    let files = backups::list(&state.paths.backups);
+    let contents: Vec<Vec<u8>> = files.iter().map(|p| std::fs::read(p).unwrap_or_default()).collect();
+    let rekeyed = vault_mut(inner)?.rekey_backups(&contents)?;
+    persist(inner, state)?;
+    for (path, new) in files.iter().zip(rekeyed) {
+        match new {
+            Some(bytes) => {
+                let _ = atomic_write(path, &bytes);
+            }
+            None => {
+                let _ = std::fs::remove_file(path);
+            }
+        }
+    }
     Ok(())
 }
 
@@ -159,7 +209,8 @@ pub fn unlock(app: AppHandle, state: State<'_, AppState>, password: String) -> C
     if !wait.is_zero() {
         return Err(CmdError::locked_out(wait));
     }
-    let vault = match Vault::open_file(&state.paths.vault, &password) {
+    let bytes = std::fs::read(&state.paths.vault)?;
+    let vault = match Vault::open(&bytes, &password) {
         Ok(v) => v,
         Err(CoreError::InvalidCredentials) => {
             let wait = inner.attempts.record_failure(Instant::now());
@@ -168,6 +219,9 @@ pub fn unlock(app: AppHandle, state: State<'_, AppState>, password: String) -> C
         Err(e) => return Err(e.into()),
     };
     inner.attempts.record_success();
+    inner.disk_hash = Some(sha256(&bytes));
+    inner.backed_up_this_session = false;
+    Profile::save(&state.paths, vault.username());
     let rollback_warning = matches!(inner.guard.check(&vault.vault_id(), vault.revision()), Check::Older { .. });
     inner.guard.record(&vault.vault_id(), vault.revision());
     let dto = UnlockDto { rollback_warning, remaining_codes: vault.remaining_recovery_codes() };
@@ -204,8 +258,11 @@ pub fn recover(app: AppHandle, state: State<'_, AppState>, code: String, new_pas
     };
     inner.attempts.record_success();
     inner.vault = Some(vault);
-    // Salva já: é isso que destrói o código usado. / Save now: this is what destroys the used code.
-    persist(&mut inner, &state)?;
+    inner.disk_hash = Some(sha256(&bytes));
+    inner.backed_up_this_session = false;
+    // Salva já: é isso que destrói o código usado. A chave dos backups também é trocada.
+    // Save now: this is what destroys the used code. The backup key is rotated too.
+    rekey_backups_and_persist(&mut inner, &state)?;
     Profile::save(&state.paths, &outcome.username);
     drop(inner);
     tray::set_locked(&app, false);
@@ -289,6 +346,8 @@ pub fn add_item(state: State<'_, AppState>, item: ItemInput) -> CmdResult<String
     new.tags.clone_from(&item.tags);
     new.password = item.password.clone().filter(|p| !p.is_empty());
     new.notes = item.notes.clone().filter(|n| !n.is_empty());
+    vault_ref(&inner)?;
+    backup_before(&mut inner, &state, false);
     let id = vault_mut(&mut inner)?.add_item(new)?;
     persist(&mut inner, &state)?;
     Ok(id.to_string())
@@ -305,6 +364,8 @@ pub fn update_item(state: State<'_, AppState>, id: String, item: ItemInput) -> C
     up.tags.clone_from(&item.tags);
     up.password.clone_from(&item.password);
     up.notes.clone_from(&item.notes);
+    vault_ref(&inner)?;
+    backup_before(&mut inner, &state, false);
     vault_mut(&mut inner)?.update_item(id, up)?;
     persist(&mut inner, &state)
 }
@@ -313,6 +374,8 @@ pub fn update_item(state: State<'_, AppState>, id: String, item: ItemInput) -> C
 pub fn delete_item(state: State<'_, AppState>, id: String) -> CmdResult<()> {
     let id = parse_id(&id)?;
     let mut inner = state.lock();
+    vault_ref(&inner)?;
+    backup_before(&mut inner, &state, true);
     vault_mut(&mut inner)?.remove_item(id)?;
     persist(&mut inner, &state)
 }
@@ -397,16 +460,20 @@ pub fn change_master_password(state: State<'_, AppState>, current: String, new: 
     let current = Zeroizing::new(current);
     let new = Zeroizing::new(new);
     let mut inner = state.lock();
+    vault_mut(&mut inner)?.verify_master_password(&current)?;
+    backup_before(&mut inner, &state, true);
     vault_mut(&mut inner)?.change_master_password(&current, &new)?;
-    persist(&mut inner, &state)
+    rekey_backups_and_persist(&mut inner, &state)
 }
 
 #[tauri::command(async)]
 pub fn regenerate_codes(state: State<'_, AppState>, password: String) -> CmdResult<Vec<String>> {
     let password = Zeroizing::new(password);
     let mut inner = state.lock();
+    vault_mut(&mut inner)?.verify_master_password(&password)?;
+    backup_before(&mut inner, &state, true);
     let codes = vault_mut(&mut inner)?.regenerate_recovery_codes(&password)?;
-    persist(&mut inner, &state)?;
+    rekey_backups_and_persist(&mut inner, &state)?;
     Ok(codes_to_strings(&codes))
 }
 

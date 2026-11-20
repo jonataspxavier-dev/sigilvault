@@ -2,11 +2,14 @@
 //! SigilVault desktop app: tray service + Tauri window.
 
 mod attempts;
+mod backups;
 mod commands;
+mod dialogs;
 mod rollback;
 mod settings;
 mod state;
 mod storage;
+mod transfer;
 mod tray;
 mod win;
 mod window;
@@ -29,6 +32,9 @@ pub fn run() {
         // Uma só instância: abrir de novo apenas mostra a janela.
         // Single instance: launching again just shows the window.
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| window::open(app)))
+        // Diálogos nativos: usados só pelo Rust (a interface não tem permissão para eles).
+        // Native dialogs: used only by Rust (the UI has no permission for them).
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
             // Só em builds de depuração: pasta de dados alternativa, para testes não tocarem no cofre real.
@@ -82,6 +88,14 @@ pub fn run() {
             commands::change_master_password,
             commands::regenerate_codes,
             commands::save_settings,
+            transfer::export_vault,
+            transfer::export_csv,
+            transfer::import_file,
+            transfer::delete_imported_file,
+            transfer::merge_vault,
+            transfer::import_vault_file,
+            transfer::list_backups,
+            transfer::restore_backup,
         ])
         .build(tauri::generate_context!())
         .expect("falha ao iniciar o SigilVault / failed to start SigilVault");

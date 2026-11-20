@@ -20,6 +20,8 @@ pub struct Paths {
     pub attempts: PathBuf,
     /// Contador de versão protegido pela DPAPI. / DPAPI-protected version counter.
     pub revision_guard: PathBuf,
+    /// Pasta dos backups automáticos. / Automatic backups folder.
+    pub backups: PathBuf,
 }
 
 impl Paths {
@@ -33,8 +35,15 @@ impl Paths {
             settings: dir.join("settings.json"),
             attempts: dir.join("attempts.json"),
             revision_guard: dir.join("revision.guard"),
+            backups: dir.join("backups"),
         })
     }
+}
+
+/// SHA-256 de um conteúdo. / SHA-256 of some content.
+pub fn sha256(bytes: &[u8]) -> [u8; 32] {
+    use sha2::{Digest, Sha256};
+    Sha256::digest(bytes).into()
 }
 
 /// Grava num `.tmp`, força a ida ao disco e substitui o original.
