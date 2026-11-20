@@ -35,7 +35,10 @@ let crossOrigin = false;
 
 // ── Proteção contra clickjacking / Clickjacking protection ───────
 
-/** Momento em que o balão apareceu na forma atual. / When the balloon appeared in its current form. */
+/** Momento da última troca de conteúdo do balão. Cliques só valem 500 ms depois: um botão que
+ *  acabou de surgir embaixo do cursor não pode ser clicado "sem querer".
+ *  Moment of the balloon's last content change. Clicks only count 500 ms later: a button that just
+ *  appeared under the cursor cannot be clicked "by accident". */
 let shownAt = Date.now();
 /** Chrome/Brave/Opera: o navegador diz se o iframe está de fato visível (sem cobertura, sem
  *  transparência, sem distorção). No Firefox não existe; fica `true`.
@@ -72,7 +75,6 @@ function call(cmd: string, extra: Msg = {}): Promise<Msg> {
 
 /** Avisa o tamanho para a página ajustar o iframe. / Reports the size so the page adjusts the iframe. */
 function resize(next: Mode): void {
-  if (next !== mode) shownAt = Date.now();
   mode = next;
   document.body.dataset.mode = mode;
   requestAnimationFrame(() => {
@@ -149,6 +151,7 @@ function problem(r: Msg): HTMLElement[] {
 }
 
 function show(...content: Child[]): void {
+  shownAt = Date.now();
   mount(root, h("section", { class: "card" }, header(), ...warnings(), ...content));
   resize(mode === "prompt" ? "prompt" : "balloon");
 }
@@ -156,12 +159,12 @@ function show(...content: Child[]): void {
 // ── Ícone / Icon ──────────────────────────────────────────────────
 
 function renderIcon(): void {
+  shownAt = Date.now();
   mount(root, h("button", { type: "button", class: "icon", title: t("ui_icon"), "aria-label": t("ui_icon"), onClick: guarded(open) }, seal(20)));
   resize("icon");
 }
 
 function open(): void {
-  mode = "balloon";
   if (kind === "signup") void renderSignup("generate");
   else void renderLogin();
 }

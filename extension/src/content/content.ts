@@ -31,8 +31,6 @@ let prompt: Widget | null = null;
 /** Último formulário em que o usuário mexeu (para o aviso de salvar). / Last form the user touched (for the save prompt). */
 let lastCtx: FormContext | null = null;
 let lastSubmit = { at: 0, key: "" };
-/** Nossa própria mudança no elemento (não é a página mexendo). / Our own change to the element (not the page tampering). */
-let selfUpdate = false;
 
 function token(): string {
   return [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -55,8 +53,10 @@ function createWidget(mode: Mode): Widget {
   frame.setAttribute("allowtransparency", "true");
   frame.style.cssText = "all:initial;display:block;border:0;width:100%;height:100%;color-scheme:normal;background:transparent";
   shadow.appendChild(frame);
+  // Os avisos das NOSSAS mudanças são descartados na hora (takeRecords em `ours`); o que chegar
+  // aqui veio de outro código. / Notices of OUR changes are discarded right away (takeRecords in
+  // `ours`); whatever arrives here came from other code.
   const observer = new MutationObserver((records) => {
-    if (selfUpdate) return;
     // A página mexeu no nosso elemento (moveu, escondeu…) ou o removeu: fecha por segurança.
     // Outras mudanças na página não importam.
     // The page touched our element (moved, hid…) or removed it: close for safety.
@@ -67,8 +67,13 @@ function createWidget(mode: Mode): Widget {
   return w;
 }
 
+/** Faz uma mudança NOSSA no elemento e descarta o aviso dela. / Makes one of OUR changes to the element and discards its notice. */
+function ours(w: Widget, change: () => void): void {
+  change();
+  w.observer.takeRecords();
+}
+
 function mountWidget(w: Widget): void {
-  selfUpdate = true;
   document.documentElement.appendChild(w.host);
   try {
     w.host.setAttribute("popover", "manual");
@@ -76,18 +81,15 @@ function mountWidget(w: Widget): void {
   } catch {
     /* sem camada superior: fica com z-index alto / no top layer: stays with a high z-index */
   }
-  position(w);
-  selfUpdate = false;
   w.observer.observe(w.host, { attributes: true });
   w.observer.observe(document.documentElement, { childList: true });
+  position(w);
 }
 
 function closeWidget(w: Widget | null): void {
   if (!w) return;
   w.observer.disconnect();
-  selfUpdate = true;
   w.host.remove();
-  selfUpdate = false;
   void send({ cmd: "cs_unregister", token: w.token });
   if (widget === w) widget = null;
   if (prompt === w) prompt = null;
@@ -116,14 +118,11 @@ function position(w: Widget): void {
       top = r.bottom + height + 6 <= window.innerHeight ? r.bottom + 4 : Math.max(8, r.top - height - 4);
     }
   }
-  const prev = selfUpdate;
-  selfUpdate = true;
-  w.host.style.cssText =
-    `all:initial;position:fixed;left:${Math.round(left)}px;top:${Math.round(top)}px;width:${width}px;height:${height}px;` +
-    "margin:0;padding:0;border:0;background:transparent;overflow:visible;z-index:2147483647;inset:auto;display:block";
-  w.host.style.setProperty("left", `${Math.round(left)}px`);
-  w.host.style.setProperty("top", `${Math.round(top)}px`);
-  selfUpdate = prev;
+  ours(w, () => {
+    w.host.style.cssText =
+      `all:initial;position:fixed;inset:auto;left:${Math.round(left)}px;top:${Math.round(top)}px;width:${width}px;height:${height}px;` +
+      "margin:0;padding:0;border:0;background:transparent;overflow:visible;z-index:2147483647;display:block";
+  });
 }
 
 let raf = 0;
@@ -160,19 +159,20 @@ function targetInput(e: Event): HTMLInputElement | null {
   return el instanceof HTMLInputElement ? el : null;
 }
 
-document.addEventListener(
-  "focusin",
-  (e) => {
-    if (!e.isTrusted) return;
-    const field = targetInput(e);
-    if (!field || (!isPasswordField(field) && !isUsernameLike(field))) return;
-    const ctx = contextFor(field);
-    if (!ctx) return;
-    lastCtx = ctx;
-    void showIcon(field, ctx);
-  },
-  true,
-);
+/** Foco ou clique REAL num campo de login mostra o ícone. / A REAL focus or click on a login field shows the icon. */
+function onFieldEvent(e: Event): void {
+  if (!e.isTrusted) return;
+  const field = targetInput(e);
+  if (!field || (!isPasswordField(field) && !isUsernameLike(field))) return;
+  const ctx = contextFor(field);
+  if (!ctx) return;
+  lastCtx = ctx;
+  void showIcon(field, ctx);
+}
+
+document.addEventListener("focusin", onFieldEvent, true);
+// Clicar de novo num campo que já tem foco não gera "focusin". / Clicking again a field that already has focus does not fire "focusin".
+document.addEventListener("pointerdown", onFieldEvent, true);
 
 document.addEventListener(
   "focusout",

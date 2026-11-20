@@ -20,7 +20,10 @@
   --font-title: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
   --font-body: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
   --font-mono: "Cascadia Mono", "Cascadia Code", Consolas, monospace;
-  color-scheme: dark;
+  /* Sem "color-scheme: dark": se o esquema do iframe for diferente do da página, o navegador pinta
+     um fundo opaco atrás dele. As cores daqui são todas explícitas.
+     No "color-scheme: dark": if the iframe's scheme differs from the page's, the browser paints an
+     opaque background behind it. All colors here are explicit. */
 }
 
 * {
