@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "node scripts/test.mjs",
     "tauri": "tauri",
     "icons": "tauri icon assets/logo.svg"
   },

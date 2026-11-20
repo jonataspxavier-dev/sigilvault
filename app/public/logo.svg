@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- Logo do SigilVault: baú-cofre de ferro forjado, fechadura e selo de cera com "S". Desenho original. -->
+  <!-- SigilVault logo: wrought-iron chest, lock and wax seal with "S". Original artwork. -->
+  <defs>
+    <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7d5030"/><stop offset="1" stop-color="#4a2d19"/>
+    </linearGradient>
+    <linearGradient id="lid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8f5d36"/><stop offset="1" stop-color="#5c3920"/>
+    </linearGradient>
+    <linearGradient id="iron" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3b3f45"/><stop offset=".5" stop-color="#6d727a"/><stop offset="1" stop-color="#34373c"/>
+    </linearGradient>
+    <linearGradient id="ironh" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6d727a"/><stop offset="1" stop-color="#34373c"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e6c784"/><stop offset="1" stop-color="#a27c38"/>
+    </linearGradient>
+    <radialGradient id="wax" cx=".38" cy=".32" r=".75">
+      <stop offset="0" stop-color="#cf4141"/><stop offset=".6" stop-color="#9b2226"/><stop offset="1" stop-color="#6a1216"/>
+    </radialGradient>
+    <clipPath id="chest">
+      <path d="M28 120 V92 C28 52 72 34 128 34 C184 34 228 52 228 92 V218 a10 10 0 0 1 -10 10 H38 a10 10 0 0 1 -10 -10 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- Corpo e tampa / Body and lid -->
+  <rect x="28" y="114" width="200" height="114" rx="10" fill="url(#wood)"/>
+  <path d="M28 118 V92 C28 52 72 34 128 34 C184 34 228 52 228 92 V118 Z" fill="url(#lid)"/>
+  <g clip-path="url(#chest)">
+    <!-- Tábuas / Planks -->
+    <path d="M20 152 H236 M20 190 H236" stroke="#2e1c10" stroke-width="3" opacity=".55"/>
+    <path d="M30 78 C70 58 186 58 226 78" stroke="#2e1c10" stroke-width="3" fill="none" opacity=".45"/>
+    <!-- Reforços verticais / Vertical bands -->
+    <rect x="50" y="30" width="22" height="200" fill="url(#iron)"/>
+    <rect x="184" y="30" width="22" height="200" fill="url(#iron)"/>
+    <!-- Reforço da junta / Seam band -->
+    <rect x="20" y="108" width="216" height="16" fill="url(#ironh)"/>
+    <rect x="20" y="214" width="216" height="14" fill="url(#ironh)"/>
+  </g>
+  <!-- Rebites / Rivets -->
+  <g fill="#b8bcc2" stroke="#26282c" stroke-width="1.5">
+    <circle cx="61" cy="62" r="4"/><circle cx="61" cy="146" r="4"/><circle cx="61" cy="196" r="4"/>
+    <circle cx="195" cy="62" r="4"/><circle cx="195" cy="146" r="4"/><circle cx="195" cy="196" r="4"/>
+    <circle cx="34" cy="116" r="3.5"/><circle cx="222" cy="116" r="3.5"/>
+    <circle cx="34" cy="221" r="3.5"/><circle cx="222" cy="221" r="3.5"/>
+  </g>
+  <!-- Contorno / Outline -->
+  <path d="M28 120 V92 C28 52 72 34 128 34 C184 34 228 52 228 92 V218 a10 10 0 0 1 -10 10 H38 a10 10 0 0 1 -10 -10 Z"
+        fill="none" stroke="#1d140c" stroke-width="6" stroke-linejoin="round"/>
+
+  <!-- Espelho da fechadura / Lock plate -->
+  <path d="M128 136 C146 136 156 142 156 152 V178 C156 194 142 204 128 210 C114 204 100 194 100 178 V152 C100 142 110 136 128 136 Z"
+        fill="url(#gold)" stroke="#4d3a18" stroke-width="4"/>
+  <path d="M110 154 C116 150 140 150 146 154" stroke="#7a5d27" stroke-width="2.5" fill="none"/>
+  <circle cx="128" cy="170" r="7.5" fill="#17181a"/>
+  <path d="M124 174 L121 192 H135 L132 174 Z" fill="#17181a"/>
+
+  <!-- Selo de cera lacrando a tampa / Wax seal sealing the lid -->
+  <path d="M128 82 c9 -1 12 4 19 5 c7 2 11 8 11 15 c1 7 -4 10 -3 17 c0 8 -7 12 -14 14 c-6 2 -9 6 -16 5 c-7 0 -10 -5 -17 -7 c-7 -3 -10 -9 -9 -16 c0 -6 -3 -10 0 -17 c3 -7 9 -9 15 -12 c5 -2 8 -4 14 -4 Z"
+        fill="url(#wax)" stroke="#4d0b0e" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="128" cy="109" r="19" fill="none" stroke="#5c0f12" stroke-width="2.5" opacity=".8"/>
+  <!-- "S" gravado: sombra + brilho / Engraved "S": shadow + highlight -->
+  <path d="M137 99 C133 94 121 94 119 101 C117 108 139 109 138 117 C137 125 122 126 117 119"
+        fill="none" stroke="#4d0b0e" stroke-width="6" stroke-linecap="round"/>
+  <path d="M137 98 C133 93 121 93 119 100 C117 107 139 108 138 116 C137 124 122 125 117 118"
+        fill="none" stroke="#e36b6b" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+</svg>
