@@ -25,6 +25,12 @@ use crate::state::{AppState, lock_app};
 /// Intervalo de checagem da inatividade. / Idle check interval.
 const IDLE_POLL: Duration = Duration::from_secs(5);
 
+/// Liga/desliga "Iniciar com o Windows" apontando para este executável.
+/// Turns "Start with Windows" on/off pointing at this executable.
+pub(crate) fn apply_startup(enabled: bool) -> std::io::Result<()> {
+    win::startup::set(enabled, &std::env::current_exe()?)
+}
+
 /// Inicia o app. / Starts the app.
 pub fn run() {
     // Versão final: ninguém liga a depuração do WebView2 por variável de ambiente.
@@ -76,8 +82,19 @@ pub fn run() {
                 }
             });
 
-            // `--tray` inicia só na bandeja (para iniciar com o Windows, no futuro).
-            // `--tray` starts in the tray only (for starting with Windows, later).
+            // "Iniciar com o Windows": regrava o caminho (o app pode ter sido reinstalado em outra
+            // pasta). Só na versão final: a de desenvolvimento não deve tomar o lugar da instalada.
+            // "Start with Windows": rewrites the path (the app may have been reinstalled elsewhere).
+            // Release only: the development build must not take the installed one's place.
+            if !cfg!(debug_assertions) {
+                let start = app.state::<AppState>().lock().settings.start_with_windows;
+                if let Err(e) = apply_startup(start) {
+                    eprintln!("iniciar com o Windows / start with Windows: {e}");
+                }
+            }
+
+            // `--tray` inicia só na bandeja (usado ao iniciar com o Windows).
+            // `--tray` starts in the tray only (used when starting with Windows).
             if !std::env::args().any(|a| a == "--tray") {
                 window::open(app.handle());
             }

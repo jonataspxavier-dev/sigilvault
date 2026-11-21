@@ -210,7 +210,7 @@ async function start(): Promise<void> {
   ctx = await api.quickContext();
   setLang(ctx.language);
   // O gerador lê as preferências daqui. / The generator reads preferences from here.
-  session.settings = { language: ctx.language, autoLockMinutes: 5, clipboardClearSecs: 30, generator: ctx.generator, hotkeySearch: "", hotkeyGenerate: "" };
+  session.settings = { language: ctx.language, autoLockMinutes: 5, clipboardClearSecs: 30, generator: ctx.generator, hotkeySearch: "", hotkeyGenerate: "", startWithWindows: false };
   if (!ctx.unlocked) return showUnlock();
   if (ctx.mode === "generate") showGenerate("generate");
   else showSearch();

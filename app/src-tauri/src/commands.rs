@@ -537,6 +537,7 @@ pub fn save_settings(app: AppHandle, state: State<'_, AppState>, settings: Setti
         tray::refresh_menu(&app);
     }
     crate::desktop::apply_hotkeys(&app, &settings);
+    crate::apply_startup(settings.start_with_windows)?;
     Ok(settings)
 }
 

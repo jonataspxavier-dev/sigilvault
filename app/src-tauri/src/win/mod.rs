@@ -4,6 +4,7 @@
 pub mod clipboard;
 pub mod dpapi;
 pub mod hotkeys;
+pub mod startup;
 pub mod system;
 pub mod target;
 pub mod typer;

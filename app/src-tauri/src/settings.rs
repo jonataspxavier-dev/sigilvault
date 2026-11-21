@@ -69,6 +69,8 @@ pub struct Settings {
     pub hotkey_search: String,
     /// Atalho de gerar (vazio = desligado). / Generate hotkey (empty = off).
     pub hotkey_generate: String,
+    /// Abrir na bandeja ao entrar no Windows (cofre bloqueado). / Open in the tray at Windows sign-in (vault locked).
+    pub start_with_windows: bool,
 }
 
 impl Default for Settings {
@@ -80,6 +82,7 @@ impl Default for Settings {
             generator: GeneratorPrefs::default(),
             hotkey_search: "Ctrl+Shift+Space".into(),
             hotkey_generate: "Ctrl+Shift+G".into(),
+            start_with_windows: false,
         }
     }
 }
@@ -140,6 +143,7 @@ mod tests {
             generator: GeneratorPrefs { length: 9999, lowercase: false, uppercase: false, digits: false, symbols: false, exclude_ambiguous: true },
             hotkey_search: "shift+a".into(),
             hotkey_generate: "  ".into(),
+            start_with_windows: true,
         }
         .sanitized();
         assert_eq!(s.hotkey_search, "Ctrl+Shift+Space");

@@ -24,6 +24,8 @@ export interface Settings {
   /** Atalhos globais ("" = desligado). / Global hotkeys ("" = off). */
   hotkeySearch: string;
   hotkeyGenerate: string;
+  /** Abrir na bandeja ao entrar no Windows. / Open in the tray at Windows sign-in. */
+  startWithWindows: boolean;
 }
 
 export interface AppState {

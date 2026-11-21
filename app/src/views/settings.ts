@@ -152,16 +152,18 @@ export function settingsPanel(username: string, onLanguageChange: () => void): H
   const lang = h("select", { class: "input" }, h("option", { value: "pt", selected: s.language === "pt" }, "Português (Brasil)"), h("option", { value: "en", selected: s.language === "en" }, "English"));
   const autolock = h("input", { type: "number", class: "input input-narrow", min: 1, max: 120, value: String(s.autoLockMinutes) });
   const clip = h("input", { type: "number", class: "input input-narrow", min: 10, max: 120, value: String(s.clipboardClearSecs) });
+  const startup = h("input", { type: "checkbox", checked: s.startWithWindows });
+  const startupField = h("label", { class: "check" }, startup, h("span", null, t("set_startup"), h("span", { class: "field-hint block" }, t("set_startup_hint"))));
   const prefErr = errorBox();
   const prefSave = button(t("save"), { variant: "primary", icon: "seal", type: "submit" });
-  const prefForm = h("form", { class: "stack" }, field(t("set_language"), lang), field(t("set_autolock"), autolock), field(t("set_clipboard"), clip), prefErr.el, h("div", { class: "actions" }, prefSave));
+  const prefForm = h("form", { class: "stack" }, field(t("set_language"), lang), field(t("set_autolock"), autolock), field(t("set_clipboard"), clip), startupField, prefErr.el, h("div", { class: "actions" }, prefSave));
   prefForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     prefErr.clear();
     try {
       const before = session.settings!.language;
       session.settings = await busy(prefSave, () =>
-        api.saveSettings({ ...session.settings!, language: lang.value as Lang, autoLockMinutes: Number(autolock.value), clipboardClearSecs: Number(clip.value) }),
+        api.saveSettings({ ...session.settings!, language: lang.value as Lang, autoLockMinutes: Number(autolock.value), clipboardClearSecs: Number(clip.value), startWithWindows: startup.checked }),
       );
       setLang(session.settings.language);
       toast(t("set_saved"));
