@@ -12,6 +12,16 @@ use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder}
 const PREFIX: &str = "main-";
 static COUNTER: AtomicU32 = AtomicU32::new(0);
 
+/// Argumentos do WebView2 (iguais em todas as janelas: o WebView2 recusa misturar). Mantém os
+/// padrões do Tauri (sem SmartScreen, que consultaria a Microsoft) e corta conexões em segundo
+/// plano e relatórios de falha, que poderiam levar memória da janela com uma senha visível.
+/// WebView2 arguments (the same for every window: WebView2 refuses to mix). Keeps Tauri's defaults
+/// (no SmartScreen, which would query Microsoft) and cuts background connections and crash
+/// reports, which could carry window memory with a visible password.
+pub(crate) const WEBVIEW_ARGS: &str = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection \
+--disable-background-networking --disable-component-update --disable-domain-reliability --disable-sync --no-pings \
+--disable-breakpad --disable-crash-reporter";
+
 /// A janela aberta agora, se houver. / The currently open window, if any.
 pub fn current(app: &AppHandle) -> Option<WebviewWindow> {
     app.webview_windows().into_iter().find(|(label, _)| label.starts_with(PREFIX)).map(|(_, w)| w)
@@ -39,6 +49,7 @@ pub fn create(app: &AppHandle) {
         .inner_size(1040.0, 700.0)
         .min_inner_size(780.0, 540.0)
         .center()
+        .additional_browser_args(WEBVIEW_ARGS)
         .build();
 }
 
@@ -68,6 +79,7 @@ pub fn open_quick(app: &AppHandle) {
         .skip_taskbar(true)
         .center()
         .focused(true)
+        .additional_browser_args(WEBVIEW_ARGS)
         .build();
     #[cfg(debug_assertions)]
     eprintln!("[sigilvault] pop-up rápido: {:?}", built.as_ref().map(|w| w.label().to_owned()).map_err(|e| e.to_string()));

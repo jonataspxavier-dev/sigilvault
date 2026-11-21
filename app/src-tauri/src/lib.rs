@@ -38,6 +38,8 @@ pub fn run() {
     win::system::harden_webview_env();
     // Sem relatórios de erro com dump de memória. / No error reports with memory dumps.
     win::system::exclude_from_error_reporting();
+    // DLLs só da pasta do programa e do System32. / DLLs only from the program folder and System32.
+    sigilvault_ipc::harden::restrict_dll_search();
 
     let app = tauri::Builder::default()
         // Uma só instância: abrir de novo apenas mostra a janela.

@@ -1,0 +1,8 @@
+# Control Flow Guard (CFG): o Windows recusa saltos indiretos para endereços que não são início
+# de função, o que dificulta explorar falhas de memória. Só no alvo Windows (o WASM da extensão
+# não é afetado).
+# Control Flow Guard (CFG): Windows refuses indirect jumps to addresses that are not a function
+# start, which makes memory bugs harder to exploit. Windows target only (the extension's WASM
+# is not affected).
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "control-flow-guard"]

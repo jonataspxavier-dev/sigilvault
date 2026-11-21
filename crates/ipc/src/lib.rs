@@ -13,6 +13,8 @@
 pub mod frame;
 
 #[cfg(windows)]
+pub mod harden;
+#[cfg(windows)]
 pub mod pipe;
 #[cfg(windows)]
 pub mod process;

@@ -8,6 +8,8 @@
 
 #[cfg(windows)]
 fn main() -> std::process::ExitCode {
+    // DLLs só da pasta do programa e do System32. / DLLs only from the program folder and System32.
+    sigilvault_ipc::harden::restrict_dll_search();
     host::run()
 }
 
