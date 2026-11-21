@@ -54,3 +54,6 @@ Desktop.ini
 # Configurações pessoais ficam fora; as do projeto entram.
 # Personal settings stay out; project settings are committed.
 .claude/settings.local.json
+
+# Binários copiados para o instalador / Binaries copied for the installer
+app/src-tauri/binaries/
