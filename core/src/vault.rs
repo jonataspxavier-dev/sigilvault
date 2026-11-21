@@ -17,8 +17,10 @@ use crate::format::{self, Header, PasswordSlot, RecoverySlot, VAULT_ID_LEN};
 use crate::recovery::{self, CODE_COUNT, CODE_ID_LEN, RecoveryCode};
 use crate::strength;
 
+mod health;
 mod transfer;
 
+pub use health::{HealthEntry, HealthReport};
 pub use transfer::{BackupInfo, ImportReport};
 
 const INFO_FIELD_KEY: &[u8] = b"sigilvault v1 item field key";

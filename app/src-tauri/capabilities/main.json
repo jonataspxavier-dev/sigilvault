@@ -39,6 +39,7 @@
     "allow-revoke-site",
     "allow-fill-log",
     "allow-reveal-history",
+    "allow-health-report",
     "allow-quick-context",
     "allow-quick-search",
     "allow-quick-type",

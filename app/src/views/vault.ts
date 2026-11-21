@@ -10,12 +10,13 @@ import { busy, button, coloredSecret, errorBox, errorMessage, field, modal, pass
 import { formatDate, parseTags } from "../util";
 import { generatorPanel } from "./generator";
 import { settingsPanel } from "./settings";
+import { healthPanel } from "./health";
 import { transferPanel } from "./transfer";
 
 /** Segundos até ocultar uma senha mostrada. / Seconds until a shown password is hidden again. */
 const REVEAL_SECS = 30;
 
-type Mode = { kind: "empty" } | { kind: "detail"; id: string } | { kind: "edit"; id: string } | { kind: "new" } | { kind: "generator" } | { kind: "settings" } | { kind: "transfer" };
+type Mode = { kind: "empty" } | { kind: "detail"; id: string } | { kind: "edit"; id: string } | { kind: "new" } | { kind: "generator" } | { kind: "settings" } | { kind: "transfer" } | { kind: "health" };
 
 /** Etiqueta das entradas criadas pelo atalho de gerar (igual a `desktop::PENDING_TAG`). / Tag of generate-hotkey entries. */
 const PENDING_TAG = "pendente";
@@ -56,6 +57,7 @@ export function showVault(opts: { rollbackWarning?: boolean } = {}): void {
       { class: "topbar-actions" },
       button(t("new_item"), { icon: "plus", variant: "primary", onClick: () => go({ kind: "new" }) }),
       button(t("generator"), { icon: "quill", onClick: () => go({ kind: "generator" }) }),
+      button(t("health"), { icon: "shield", onClick: () => go({ kind: "health" }) }),
       button(t("transfer"), { icon: "chest", onClick: () => go({ kind: "transfer" }) }),
       button(t("settings"), { icon: "gear", onClick: () => go({ kind: "settings" }) }),
       button(t("lock"), { icon: "lock", variant: "ghost", onClick: () => void api.lock() }),
@@ -128,6 +130,17 @@ export function showVault(opts: { rollbackWarning?: boolean } = {}): void {
         return mount(panel, settingsPanel(username, () => showVault()));
       case "transfer":
         return mount(panel, transferPanel(username, () => void refresh()));
+      case "health":
+        return mount(
+          panel,
+          healthPanel(async (id) => {
+            // Limpa a busca para o item aparecer na lista. / Clears the search so the item shows in the list.
+            search.value = "";
+            query = "";
+            await refresh();
+            go({ kind: "detail", id });
+          }),
+        );
     }
   }
 

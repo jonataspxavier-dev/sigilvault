@@ -433,6 +433,58 @@ pub fn reveal_history(state: State<'_, AppState>, id: String) -> CmdResult<Vec<H
         .collect())
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HealthEntryDto {
+    id: String,
+    title: String,
+    username: String,
+    kind: ItemKind,
+    score: u8,
+    weak: bool,
+    reused_with: usize,
+    reuse_group: Option<usize>,
+    age_days: u64,
+    old: bool,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HealthDto {
+    checked: usize,
+    entries: Vec<HealthEntryDto>,
+}
+
+/// Relatório de saúde (fracas, repetidas, antigas). Não devolve nenhuma senha.
+/// Health report (weak, reused, old). Returns no password.
+#[tauri::command(async)]
+pub fn health_report(state: State<'_, AppState>) -> CmdResult<HealthDto> {
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+    let inner = state.lock();
+    let vault = vault_ref(&inner)?;
+    let report = vault.health_report(now)?;
+    let entries = report
+        .entries
+        .into_iter()
+        .filter_map(|e| {
+            let item = vault.item(e.id)?;
+            Some(HealthEntryDto {
+                id: e.id.to_string(),
+                title: item.title().to_owned(),
+                username: item.username().to_owned(),
+                kind: item.kind(),
+                score: e.score,
+                weak: e.weak,
+                reused_with: e.reused_with,
+                reuse_group: e.reuse_group,
+                age_days: e.age_days,
+                old: e.old,
+            })
+        })
+        .collect();
+    Ok(HealthDto { checked: report.checked, entries })
+}
+
 #[tauri::command(async)]
 pub fn reveal_notes(state: State<'_, AppState>, id: String) -> CmdResult<Option<String>> {
     let id = parse_id(&id)?;

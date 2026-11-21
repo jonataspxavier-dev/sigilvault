@@ -134,6 +134,7 @@ pub fn run() {
             bridge::commands::revoke_site,
             bridge::commands::fill_log,
             commands::reveal_history,
+            commands::health_report,
             desktop::quick_context,
             desktop::quick_search,
             desktop::quick_type,

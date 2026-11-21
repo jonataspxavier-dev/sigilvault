@@ -1183,3 +1183,55 @@ select.input {
   border: 1px solid var(--gold);
   border-radius: 7px;
 }
+
+/* Relatório de saúde / Health report */
+.health-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.health-stat {
+  display: flex;
+  flex-direction: column;
+  min-width: 96px;
+  padding: 8px 14px;
+  background: var(--stone-700);
+  border: 1px solid var(--iron);
+  border-radius: 8px;
+}
+
+.health-stat.bad {
+  border-color: var(--danger);
+}
+
+.health-num {
+  font-family: var(--font-title);
+  font-size: 24px;
+  color: var(--gold-light);
+}
+
+.health-stat.bad .health-num {
+  color: var(--danger);
+}
+
+.health-list .item {
+  flex-wrap: wrap;
+  cursor: pointer;
+}
+
+.tag.health-bad {
+  color: #fff;
+  background: var(--wax);
+  border-color: var(--wax-light);
+}
+
+.tag.health-warn {
+  color: var(--stone-900);
+  background: var(--gold);
+  border-color: var(--gold-light);
+}
+
+.health-ok {
+  color: var(--ok);
+}

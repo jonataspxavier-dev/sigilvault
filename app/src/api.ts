@@ -28,6 +28,28 @@ export interface Settings {
   startWithWindows: boolean;
 }
 
+/** Item com problema no relatório de saúde (sem senha). / Item with a problem in the health report (no password). */
+export interface HealthEntry {
+  id: string;
+  title: string;
+  username: string;
+  kind: ItemKind;
+  /** Nota do zxcvbn (0 a 4). / zxcvbn score (0 to 4). */
+  score: number;
+  weak: boolean;
+  /** Quantos outros itens usam a mesma senha. / How many other items use the same password. */
+  reusedWith: number;
+  /** Mesmo número = mesma senha. / Same number = same password. */
+  reuseGroup: number | null;
+  ageDays: number;
+  old: boolean;
+}
+
+export interface HealthReport {
+  checked: number;
+  entries: HealthEntry[];
+}
+
 export interface AppState {
   hasVault: boolean;
   unlocked: boolean;
@@ -192,5 +214,7 @@ export const api = {
   quickClose: () => invoke<void>("quick_close"),
   hotkeysInUse: () => invoke<("search" | "generate")[]>("hotkeys_in_use"),
   revealHistory: (id: string) => invoke<{ changedAt: number; password: string }[]>("reveal_history", { id }),
+  // Fase 7. / Phase 7.
+  healthReport: () => invoke<HealthReport>("health_report"),
   onPairing: (cb: (e: PairingEvent) => void) => listen<PairingEvent>("pairing", (e) => cb(e.payload)),
 };

@@ -36,4 +36,4 @@ pub use error::{Error, Result};
 pub use generator::{GeneratorOptions, generate};
 pub use origin::Origin;
 pub use recovery::RecoveryCode;
-pub use vault::{MAX_HISTORY, normalize_path, BackupInfo, ImportReport, Item, ItemId, ItemKind, ItemUpdate, NewItem, RecoveryOutcome, Vault};
+pub use vault::{MAX_HISTORY, normalize_path, BackupInfo, HealthEntry, HealthReport, ImportReport, Item, ItemId, ItemKind, ItemUpdate, NewItem, RecoveryOutcome, Vault};
