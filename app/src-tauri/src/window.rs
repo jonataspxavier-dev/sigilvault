@@ -60,7 +60,7 @@ const QUICK_PREFIX: &str = "quick-";
 pub fn open_quick(app: &AppHandle) {
     destroy_quick(app);
     let label = format!("{QUICK_PREFIX}{}", COUNTER.fetch_add(1, Ordering::Relaxed) + 1);
-    if let Ok(w) = WebviewWindowBuilder::new(app, label, WebviewUrl::App("quick.html".into()))
+    let built = WebviewWindowBuilder::new(app, label, WebviewUrl::App("quick.html".into()))
         .title("SigilVault")
         .inner_size(500.0, 460.0)
         .resizable(false)
@@ -68,8 +68,10 @@ pub fn open_quick(app: &AppHandle) {
         .skip_taskbar(true)
         .center()
         .focused(true)
-        .build()
-    {
+        .build();
+    #[cfg(debug_assertions)]
+    eprintln!("[sigilvault] pop-up rápido: {:?}", built.as_ref().map(|w| w.label().to_owned()).map_err(|e| e.to_string()));
+    if let Ok(w) = built {
         let _ = w.set_focus();
     }
 }

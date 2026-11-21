@@ -82,6 +82,8 @@ pub fn start(app: &AppHandle) {
 }
 
 fn on_hotkey(app: &AppHandle, action: Action, target: Option<Target>) {
+    #[cfg(debug_assertions)]
+    eprintln!("[sigilvault] atalho {action:?}, alvo: {:?}", target.as_ref().map(|t| t.exe_name()));
     // Atalho apertado dentro do próprio SigilVault: sem alvo (só copiar). / Hotkey inside SigilVault itself: no target (copy only).
     let target = target.filter(|t| !t.is_ours());
     *app.state::<Desktop>().session() = Some(Session { action, target });
