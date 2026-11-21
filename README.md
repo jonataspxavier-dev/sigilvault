@@ -8,7 +8,7 @@
 
 **SigilVault** é um gerenciador de senhas **local** para Windows. Ele guarda tudo criptografado no próprio computador, preenche senhas no navegador e em apps desktop e gera senhas fortes. Nada vai para a nuvem, a menos que você escolha.
 
-> Status: **Fase 6 concluída**: atalhos globais, pop-up de busca e Auto-Type em programas do Windows, além do navegador. Próximo passo: endurecimento e lançamento.
+> Status: **Fase 7 em andamento**: instalador por máquina, memória travada, relatório de saúde e endurecimento prontos. Para instalar (versão de testes), veja o [guia de instalação](docs/INSTALAR.md).
 
 ### Visão geral
 
@@ -33,6 +33,7 @@ Apps desktop ◄──────────── Auto-Type (atalho) ──�
 | [`crates/pairing/`](crates/pairing/) | Pareamento OPAQUE e canal criptografado, usado pelo app e (em WebAssembly) pela extensão. |
 | [`crates/ipc/`](crates/ipc/) | Pipe protegido entre o app e o host, e verificação do executável do outro lado (caminho e Authenticode). |
 | [`crates/native-host/`](crates/native-host/) | `sigilvault-host.exe`: o programa que o navegador abre; só repassa mensagens criptografadas. |
+| [`crates/locked/`](crates/locked/) | Chaves do cofre em memória travada (`VirtualLock`), fora do arquivo de paginação. |
 | [`docs/`](docs/) | [Planejamento completo](docs/PLANEJAMENTO.md). |
 
 ### Modelo de segurança
@@ -47,6 +48,8 @@ Apps desktop ◄──────────── Auto-Type (atalho) ──�
 - **Preenchimento no navegador:** só com clique; origem completa (protocolo + domínio + porta), subdomínios só se você permitir no item, e nunca de `https` para `http`. A origem vem do navegador, e o app confere de novo. O primeiro preenchimento em cada site pede confirmação no app; formulários dentro de outro site perguntam sempre. Ícone e balão num iframe da extensão que a página não lê; cliques só reais, depois de 500 ms visíveis. Registro de preenchimentos e limite de frequência. Senhas trocadas vão para o histórico.
 - **Auto-Type (desktop):** só por atalho seu; reconhece o programa pelo executável e pela assinatura (nunca pelo título); não digita em navegadores nem em janelas de administrador; confere a janela antes de cada bloco e para se ela mudar; digitação Unicode (acentos do ABNT2). O pop-up tem permissões mínimas.
 - **Extensão ↔ app:** Native Messaging (sem porta de rede) → `sigilvault-host.exe` → named pipe só do seu usuário. Cada lado confere o executável do outro. Pareamento OPAQUE com código mostrado no app; depois, canal AES-256-GCM por conexão. A extensão nunca guarda senhas.
+- **Instalação protegida:** sem certificado de assinatura, o app e o conector só confiam um no outro se estiverem na mesma pasta que o usuário comum não altera (Program Files). Com certificado, a assinatura também é exigida.
+- **Processo:** chaves do cofre em memória travada; fora dos relatórios de erro do Windows; DLLs só da pasta do programa e do System32; Control Flow Guard; WebView2 sem SmartScreen, conexões de fundo nem relatórios de falha.
 - **Não protege contra:** malware ou keylogger rodando enquanto o cofre está desbloqueado.
 
 ### Fases
@@ -57,7 +60,7 @@ Apps desktop ◄──────────── Auto-Type (atalho) ──�
 4. Extensão + Native Messaging com pareamento seguro ✅
 5. Navegador completo: preencher, balão "gerar ou só salvar" e aviso de salvar ✅
 6. Desktop completo: atalhos globais, pop-up de busca e Auto-Type ✅
-7. **Endurecimento e lançamento: revisão de segurança, instalador assinado e lojas** ← *próxima*
+7. **Endurecimento e lançamento:** instalador por máquina, memória travada, iniciar com o Windows, relatório de saúde e revisão de segurança ← *em andamento* (Windows Hello, assinatura e lojas ficam para depois)
 
 ### Desenvolvimento
 
@@ -66,6 +69,7 @@ cargo test --workspace          # testes do núcleo e do app (Rust)
 cd app; npm install; npm test   # testes da interface
 cd extension; npm install; npm test; npm run build   # extensão (veja extension/README.md)
 npx tauri dev                   # abre o app em modo de desenvolvimento
+npx tauri build                 # instalador (target\release\bundle\nsis)
 ```
 
 Requisitos: Rust estável (rustup), Node.js LTS e Visual Studio Build Tools com C++.
@@ -76,7 +80,7 @@ Requisitos: Rust estável (rustup), Node.js LTS e Visual Studio Build Tools com 
 
 **SigilVault** is a **local** password manager for Windows. It keeps everything encrypted on your own computer, fills passwords in the browser and in desktop apps, and generates strong passwords. Nothing goes to the cloud unless you choose so.
 
-> Status: **Phase 6 done**: global hotkeys, search popup and Auto-Type into Windows programs, besides the browser. Next: hardening and release.
+> Status: **Phase 7 in progress**: per-machine installer, locked memory, health report and hardening are done. To install (test build), see the [install guide](docs/INSTALAR.md).
 
 ### Overview
 
@@ -101,6 +105,7 @@ Desktop apps ◄──────────── Auto-Type (hotkey) ── T
 | [`crates/pairing/`](crates/pairing/) | OPAQUE pairing and encrypted channel, used by the app and (as WebAssembly) by the extension. |
 | [`crates/ipc/`](crates/ipc/) | Protected pipe between the app and the host, and checks of the executable on the other side (path and Authenticode). |
 | [`crates/native-host/`](crates/native-host/) | `sigilvault-host.exe`: the program the browser starts; it only relays encrypted messages. |
+| [`crates/locked/`](crates/locked/) | Vault keys in locked memory (`VirtualLock`), kept out of the page file. |
 | [`docs/`](docs/) | [Full plan (Portuguese)](docs/PLANEJAMENTO.md). |
 
 ### Security model
@@ -115,6 +120,8 @@ Desktop apps ◄──────────── Auto-Type (hotkey) ── T
 - **Browser filling:** click only; full origin (scheme + domain + port), subdomains only if you allow them on the item, and never from `https` to `http`. The origin comes from the browser, and the app checks it again. The first fill on each site asks for confirmation in the app; forms inside another site always ask. Icon and balloon in an extension iframe the page cannot read; real clicks only, after 500 ms on screen. Fill log and rate limit. Changed passwords go to the history.
 - **Auto-Type (desktop):** only on your hotkey; recognizes the program by executable and signature (never by title); never types into browsers or administrator windows; checks the window before each block and stops if it changed; Unicode typing. The popup has minimal permissions.
 - **Extension ↔ app:** Native Messaging (no network port) → `sigilvault-host.exe` → a named pipe for your user only. Each side checks the other's executable. OPAQUE pairing with a code shown in the app; then an AES-256-GCM channel per connection. The extension never stores passwords.
+- **Protected install:** without a signing certificate, the app and the connector only trust each other when they sit in the same folder a normal user cannot change (Program Files). With a certificate, the signature is required too.
+- **Process:** vault keys in locked memory; excluded from Windows Error Reporting; DLLs only from the program folder and System32; Control Flow Guard; WebView2 without SmartScreen, background connections or crash reports.
 - **Does not protect against:** malware or keyloggers running while the vault is unlocked.
 
 ### Phases
@@ -125,7 +132,7 @@ Desktop apps ◄──────────── Auto-Type (hotkey) ── T
 4. Extension + Native Messaging with secure pairing ✅
 5. Full browser support: fill, "generate or just save" popup and save prompt ✅
 6. Full desktop support: global hotkeys, search popup and Auto-Type ✅
-7. **Hardening and release: security review, signed installer and store publishing** ← *next*
+7. **Hardening and release:** per-machine installer, locked memory, start with Windows, health report and security review ← *in progress* (Windows Hello, signing and stores come later)
 
 ### Development
 
@@ -134,6 +141,7 @@ cargo test --workspace          # core and app tests (Rust)
 cd app; npm install; npm test   # UI tests
 cd extension; npm install; npm test; npm run build   # extension (see extension/README.md)
 npx tauri dev                   # opens the app in development mode
+npx tauri build                 # installer (target\release\bundle\nsis)
 ```
 
 Requirements: stable Rust (rustup), Node.js LTS and Visual Studio Build Tools with C++.
