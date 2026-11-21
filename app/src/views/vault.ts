@@ -5,6 +5,7 @@ import { api, type Item, type ItemInput, type ItemKind } from "../api";
 import { h, mount } from "../dom";
 import { getLang, t } from "../i18n";
 import { icon, type IconName } from "../icons";
+import { gateClose, sparks, unroll } from "../motion";
 import { session } from "../nav";
 import { busy, button, coloredSecret, errorBox, errorMessage, field, modal, passwordInput, textInput, toast } from "../ui";
 import { formatDate, parseTags } from "../util";
@@ -51,16 +52,30 @@ export function showVault(opts: { rollbackWarning?: boolean } = {}): void {
   const header = h(
     "header",
     { class: "topbar" },
-    h("div", { class: "brand brand-small" }, h("img", { src: "/logo.svg", alt: "", class: "brand-logo" }), h("span", { class: "brand-name" }, "SigilVault")),
+    h("div", { class: "brand brand-small" }, h("img", { src: "/logo.png", alt: "", class: "brand-logo" }), h("span", { class: "brand-name" }, "SigilVault")),
     h(
       "nav",
       { class: "topbar-actions" },
       button(t("new_item"), { icon: "plus", variant: "primary", onClick: () => go({ kind: "new" }) }),
       button(t("generator"), { icon: "quill", onClick: () => go({ kind: "generator" }) }),
-      button(t("health"), { icon: "shield", onClick: () => go({ kind: "health" }) }),
+      button(t("health"), { icon: "gem", onClick: () => go({ kind: "health" }) }),
       button(t("transfer"), { icon: "chest", onClick: () => go({ kind: "transfer" }) }),
       button(t("settings"), { icon: "gear", onClick: () => go({ kind: "settings" }) }),
-      button(t("lock"), { icon: "lock", variant: "ghost", onClick: () => void api.lock() }),
+      button(t("lock"), {
+        icon: "lock",
+        variant: "ghost",
+        onClick: async () => {
+          // O portão desce e só então o cofre bloqueia (a janela é destruída em seguida).
+          // The gate drops and only then the vault locks (the window is destroyed right after).
+          await gateClose();
+          try {
+            await api.lock();
+          } catch (e) {
+            document.querySelectorAll(".gate").forEach((g) => g.remove());
+            toast(errorMessage(e));
+          }
+        },
+      }),
     ),
   );
 
@@ -72,6 +87,7 @@ export function showVault(opts: { rollbackWarning?: boolean } = {}): void {
     mode = next;
     renderList();
     renderPanel();
+    unroll(panel);
   }
 
   async function refresh() {
@@ -115,7 +131,7 @@ export function showVault(opts: { rollbackWarning?: boolean } = {}): void {
   function renderPanel() {
     switch (mode.kind) {
       case "empty":
-        return mount(panel, h("div", { class: "panel-empty" }, h("img", { src: "/logo.svg", alt: "", class: "panel-empty-logo" }), h("p", { class: "muted" }, t("select_item"))));
+        return mount(panel, h("div", { class: "panel-empty" }, h("img", { src: "/logo.png", alt: "", class: "panel-empty-logo" }), h("p", { class: "muted" }, t("select_item"))));
       case "detail":
         return renderDetail(mode.id);
       case "edit": {
@@ -152,7 +168,9 @@ export function showVault(opts: { rollbackWarning?: boolean } = {}): void {
 
     const copy = (fieldName: "password" | "username") => async () => {
       try {
+        const from = document.activeElement;
         toast(t("copied", { secs: await api.copyField(item.id, fieldName) }));
+        if (from) sparks(from);
       } catch (e) {
         toast(errorMessage(e));
       }

@@ -4,6 +4,7 @@
 import { api, type GeneratorPrefs } from "../api";
 import { h } from "../dom";
 import { t } from "../i18n";
+import { sparks } from "../motion";
 import { session } from "../nav";
 import { button, coloredSecret, errorBox, errorMessage, toast } from "../ui";
 import { entropyLabel } from "../util";
@@ -59,7 +60,9 @@ export function generatorPanel(opts: { onUse?: (password: string) => void; compa
       onClick: async () => {
         if (!current) return;
         try {
+          const from = document.activeElement;
           toast(t("copied", { secs: await api.copyText(current) }));
+          if (from) sparks(from);
         } catch (e) {
           err.show(errorMessage(e));
         }

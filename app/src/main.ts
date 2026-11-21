@@ -2,6 +2,7 @@
 // UI entry point: reads app state and picks the screen.
 
 import "./styles.css";
+import "./medieval.css";
 import { listen } from "@tauri-apps/api/event";
 import { api } from "./api";
 import { setLang } from "./i18n";

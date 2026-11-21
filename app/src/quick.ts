@@ -4,6 +4,7 @@
 // program. Fully keyboard-driven: type, ↑/↓, Enter types, Esc closes.
 
 import "./styles.css";
+import "./medieval.css";
 
 import { type QuickContext, type QuickItem, api, isCmdError } from "./api";
 import { h, mount } from "./dom";
@@ -34,7 +35,7 @@ function header(): HTMLElement {
   return h(
     "header",
     { class: "quick-head" },
-    h("div", { class: "brand" }, h("img", { src: "/logo.svg", alt: "", class: "brand-logo quick-logo" }), h("div", { class: "brand-name" }, "SigilVault")),
+    h("div", { class: "brand" }, h("img", { src: "/logo.png", alt: "", class: "brand-logo quick-logo" }), h("div", { class: "brand-name" }, "SigilVault")),
     where,
     warn ? h("p", { class: "error" }, warn) : null,
   );

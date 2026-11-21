@@ -5,6 +5,7 @@ import { api, isCmdError, type AppState } from "../api";
 import { h, mount } from "../dom";
 import { t } from "../i18n";
 import { icon } from "../icons";
+import { runes, sealBreak, smoke } from "../motion";
 import { nav, session } from "../nav";
 import { busy, button, divider, errorBox, errorMessage, field, modal, passwordInput, strengthMeter, textInput } from "../ui";
 import { formatCodeInput } from "../util";
@@ -18,13 +19,21 @@ function authCard(title: string, ...content: (Node | null)[]): HTMLElement {
   return h(
     "section",
     { class: "auth" },
+    smoke(),
     h(
       "div",
-      { class: "card auth-card" },
-      h("div", { class: "brand" }, h("img", { src: "/logo.svg", alt: "", class: "brand-logo" }), h("div", null, h("div", { class: "brand-name" }, "SigilVault"), h("div", { class: "brand-tagline" }, t("tagline")))),
-      divider(),
-      h("h1", { class: "title" }, title),
-      ...content,
+      { class: "auth-wrap" },
+      // Dragão guardião pousado na borda do cartão, com halo de brasa. / Guardian dragon perched on the card edge, with an ember halo.
+      h("div", { class: "auth-emblem" }, h("img", { src: "/dragao.png", alt: "" })),
+      h(
+        "div",
+        { class: "card auth-card" },
+        h("div", { class: "auth-brand" }, h("div", { class: "brand-name" }, "SigilVault"), h("div", { class: "brand-tagline" }, t("tagline"))),
+        divider(),
+        runes(),
+        h("h1", { class: "title" }, title),
+        ...content,
+      ),
     ),
   );
 }
@@ -163,6 +172,8 @@ export function showUnlock(state: AppState): void {
       const res = await busy(submit, () => api.unlock(pw.input.value));
       pw.input.value = "";
       session.remainingCodes = res.remainingCodes;
+      // O selo se parte por cima enquanto o cofre aparece. / The seal breaks on top while the vault appears.
+      sealBreak();
       nav().vault({ rollbackWarning: res.rollbackWarning });
     } catch (ex) {
       pw.input.select();
