@@ -6,6 +6,7 @@
 // straight to the field.
 
 import "./frame.css";
+import "../medieval.css";
 
 import { type Child, h, mount } from "../dom";
 import { ext } from "../ext";

@@ -4,6 +4,7 @@
 // the background for everything.
 
 import "./popup.css";
+import "../medieval.css";
 
 import type { Health, View } from "../controller";
 import { type Child, h, mount } from "../dom";

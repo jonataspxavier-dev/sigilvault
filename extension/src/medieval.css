@@ -1,0 +1,240 @@
+/* Tema medieval da extensão (o mesmo do app): letra gótica, painéis escuros, cantos de ferro com
+   brasa e animações curtas. Carregado DEPOIS de popup.css/frame.css e só sobrescreve o necessário.
+   Extension medieval theme (same as the app): blackletter titles, dark panels, iron corners with
+   an ember gem and short animations. Loaded AFTER popup.css/frame.css; only overrides what is needed. */
+
+/* Fontes empacotadas na extensão (licença OFL em fonts/). / Fonts bundled with the extension (OFL license in fonts/). */
+@font-face {
+  font-family: "Grenze Gotisch";
+  src: url("./fonts/grenze-gotisch-latin.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Jost";
+  src: url("./fonts/jost-latin.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  --stone-900: #0c0c0e;
+  --stone-800: #131316;
+  --stone-700: #19191d;
+  --stone-600: #24242a;
+  --iron: #2e2e34;
+  --gold: #d9b878;
+  --gold-light: #f0d9a0;
+  --gold-dim: #8a7246;
+  --ember: #c8322a;
+  --ember-glow: rgba(214, 60, 40, 0.5);
+  --parchment: #ece3cf;
+  --text: #e6e0d2;
+  --muted: #9a9384;
+  --font-title: "Grenze Gotisch", "Palatino Linotype", Georgia, serif;
+  --font-body: "Jost", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+
+  --corner-tl: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 34'%3E%3Cpath d='M2 2 18 4 10 6 6 10 4 18Z' fill='%236b5a45' stroke='%23000' stroke-width='.6'/%3E%3Cpath d='M2 2 30 3 12 5ZM2 2 3 30 5 12Z' fill='%23a3824e'/%3E%3Ccircle cx='7' cy='7' r='2.4' fill='%23c8322a' stroke='%23000' stroke-width='.5'/%3E%3C/svg%3E");
+  --corner-tr: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 34'%3E%3Cg transform='translate(34 0) scale(-1 1)'%3E%3Cpath d='M2 2 18 4 10 6 6 10 4 18Z' fill='%236b5a45' stroke='%23000' stroke-width='.6'/%3E%3Cpath d='M2 2 30 3 12 5ZM2 2 3 30 5 12Z' fill='%23a3824e'/%3E%3Ccircle cx='7' cy='7' r='2.4' fill='%23c8322a' stroke='%23000' stroke-width='.5'/%3E%3C/g%3E%3C/svg%3E");
+  --corner-bl: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 34'%3E%3Cg transform='translate(0 34) scale(1 -1)'%3E%3Cpath d='M2 2 18 4 10 6 6 10 4 18Z' fill='%236b5a45' stroke='%23000' stroke-width='.6'/%3E%3Cpath d='M2 2 30 3 12 5ZM2 2 3 30 5 12Z' fill='%23a3824e'/%3E%3Ccircle cx='7' cy='7' r='2.4' fill='%23c8322a' stroke='%23000' stroke-width='.5'/%3E%3C/g%3E%3C/svg%3E");
+  --corner-br: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 34'%3E%3Cg transform='translate(34 34) scale(-1 -1)'%3E%3Cpath d='M2 2 18 4 10 6 6 10 4 18Z' fill='%236b5a45' stroke='%23000' stroke-width='.6'/%3E%3Cpath d='M2 2 30 3 12 5ZM2 2 3 30 5 12Z' fill='%23a3824e'/%3E%3Ccircle cx='7' cy='7' r='2.4' fill='%23c8322a' stroke='%23000' stroke-width='.5'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* ── Cartão: painel escuro e quatro cantos de ferro / Card: dark panel and four iron corners ── */
+.card {
+  background:
+    var(--corner-tl) top left / 24px 24px no-repeat,
+    var(--corner-tr) top right / 24px 24px no-repeat,
+    var(--corner-bl) bottom left / 24px 24px no-repeat,
+    var(--corner-br) bottom right / 24px 24px no-repeat,
+    linear-gradient(180deg, #19191d, #111114);
+  background-origin: border-box;
+  border: 1px solid #2a2a2f;
+  border-radius: 4px;
+}
+
+/* Popup: o pergaminho se desenrola ao abrir. / Popup: the parchment unrolls on open. */
+#app > .card {
+  animation: unroll 0.45s cubic-bezier(0.3, 0.7, 0.2, 1) both;
+}
+
+@keyframes unroll {
+  from { clip-path: inset(0 0 100% 0); opacity: 0.4; }
+  to { clip-path: inset(0 0 0 0); opacity: 1; }
+}
+
+/* Balão: aparece rápido e discreto (ele troca de conteúdo várias vezes).
+   Balloon: quick, subtle appearance (its content changes several times). */
+#ui > .card {
+  animation: appear 0.18s ease-out both;
+}
+
+@keyframes appear {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: none; }
+}
+
+.brand {
+  border-bottom-color: var(--gold-dim);
+}
+
+.logo {
+  width: 38px;
+  height: 38px;
+  filter: drop-shadow(0 0 5px var(--ember-glow));
+}
+
+.brand-name,
+.title,
+.site {
+  font-family: var(--font-title);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.brand-name {
+  font-size: 23px;
+}
+
+.title {
+  font-size: 21px;
+  color: var(--gold-light);
+}
+
+.site {
+  font-size: 17px;
+}
+
+.head {
+  border-bottom-color: var(--gold-dim);
+}
+
+.pill {
+  border-radius: 3px;
+}
+
+.pill-locked {
+  background: rgba(200, 50, 42, 0.25);
+  border-color: var(--ember);
+}
+
+.pill-unlocked {
+  background: rgba(217, 184, 120, 0.15);
+  border-color: var(--gold);
+}
+
+/* ── Campos: chama de vela ao focar / Inputs: candle flame on focus ── */
+.code-input {
+  background: #0b0b0d;
+  border-color: #34343a;
+  border-radius: 3px;
+}
+
+.code-input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px rgba(217, 184, 120, 0.25), 0 0 14px rgba(230, 150, 60, 0.16);
+  animation: candle 1.6s ease-out;
+}
+
+@keyframes candle {
+  0% { box-shadow: 0 0 0 0 rgba(230, 150, 60, 0); }
+  20% { box-shadow: 0 0 18px 2px rgba(240, 170, 70, 0.45); }
+  35% { box-shadow: 0 0 10px 1px rgba(240, 170, 70, 0.25); }
+  50% { box-shadow: 0 0 16px 2px rgba(240, 170, 70, 0.4); }
+  100% { box-shadow: 0 0 0 1px rgba(217, 184, 120, 0.25), 0 0 14px rgba(230, 150, 60, 0.16); }
+}
+
+/* ── Botões: brilho de ouro e brasa / Buttons: gold shimmer and ember ── */
+.btn {
+  position: relative;
+  overflow: hidden;
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+.btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -50%;
+  width: 40%;
+  background: linear-gradient(100deg, transparent, rgba(255, 230, 170, 0.3), transparent);
+  transform: skewX(-20deg);
+  pointer-events: none;
+}
+
+.btn:hover:not(:disabled)::before {
+  animation: sweep 0.8s ease-out;
+}
+
+@keyframes sweep {
+  to { left: 120%; }
+}
+
+.btn-primary {
+  color: var(--gold-light);
+  background: linear-gradient(180deg, #3a1a18, #241011);
+  border-color: var(--ember);
+}
+
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 120%, rgba(230, 80, 40, 0.55), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: none;
+  box-shadow: 0 0 10px var(--ember-glow), inset 0 0 8px rgba(200, 50, 42, 0.35);
+}
+
+.btn-primary:hover:not(:disabled)::after {
+  opacity: 1;
+}
+
+.btn-secondary,
+.btn-ghost {
+  color: var(--parchment);
+  background: transparent;
+  border-color: var(--gold-dim);
+}
+
+.btn-secondary:hover:not(:disabled),
+.btn-ghost:hover:not(:disabled) {
+  background: rgba(217, 184, 120, 0.06);
+  border-color: var(--gold);
+}
+
+/* ── Balão: contas, abas e senha gerada / Balloon: accounts, tabs and generated password ── */
+.account,
+.tab,
+.preview {
+  border-radius: 3px;
+  background: #0b0b0d;
+}
+
+.account:hover,
+.account:focus-visible {
+  border-color: var(--gold);
+  box-shadow: 0 0 8px var(--ember-glow);
+}
+
+.tab.active {
+  border-color: var(--ember);
+  box-shadow: inset 0 -2px 0 var(--gold);
+}
+
+.preview {
+  border-color: var(--gold-dim);
+}
+
+.warn,
+.error {
+  border-radius: 3px;
+}
