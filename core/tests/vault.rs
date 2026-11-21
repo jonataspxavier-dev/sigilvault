@@ -43,6 +43,20 @@ fn create_save_open_roundtrip() {
 }
 
 #[test]
+#[cfg(windows)]
+fn keys_stay_in_locked_memory() {
+    let (bytes, codes) = sample_vault();
+    // Aberto com a senha, com código (que troca as chaves) e depois de trocar a senha.
+    // Opened with the password, with a code (which rotates the keys) and after changing the password.
+    let mut v = Vault::open(&bytes, PW).unwrap();
+    assert!(v.keys_locked());
+    v.change_master_password(PW, NEW_PW).unwrap();
+    assert!(v.keys_locked());
+    let (r, _) = Vault::recover(&bytes, &codes[0], NEW_PW).unwrap();
+    assert!(r.keys_locked());
+}
+
+#[test]
 fn file_contains_no_plaintext() {
     let (bytes, _) = sample_vault();
     let haystack = String::from_utf8_lossy(&bytes);

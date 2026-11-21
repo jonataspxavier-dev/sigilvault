@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use zeroize::{Zeroize, ZeroizeOnDrop, Zeroizing};
 
-use super::{BackupKey, Body, FIELD_NOTES, FIELD_PASSWORD, Item, ItemId, ItemKind, NewItem, Vault, derive_field_key, make_password_slot, now};
+use super::{BackupKey, Body, FIELD_NOTES, FIELD_PASSWORD, Item, ItemId, ItemKind, NewItem, Vault, derive_field_key, lock, make_password_slot, now};
 use crate::backup::{self, BackupHeader};
 use crate::crypto::{self, KdfParams, SALT_LEN};
 use crate::error::{Error, Result};
@@ -125,7 +125,7 @@ pub struct ImportReport {
 
 impl Vault {
     fn backup_key(&self) -> Result<&[u8; 32]> {
-        self.body.backup_key.as_ref().map(|k| &k.0).ok_or(Error::Crypto)
+        self.body.backup_key.as_ref().map(|k| &*k.0).ok_or(Error::Crypto)
     }
 
     /// Converte os itens para a forma portátil (descriptografa senhas e notas).
@@ -236,10 +236,10 @@ impl Vault {
             vault_id,
             revision: 0,
             recovery_salt: crypto::random_array::<SALT_LEN>()?,
-            field_key: derive_field_key(&vault_key, &vault_id)?,
+            field_key: lock(derive_field_key(&vault_key, &vault_id)?),
             password_slot: make_password_slot(&vault_id, &vault_key, password, kdf)?,
             recovery_slots: Vec::new(),
-            vault_key,
+            vault_key: lock(vault_key),
             body: Body {
                 username: self.body.username.clone(),
                 recovery_keys: Vec::new(),

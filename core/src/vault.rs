@@ -8,6 +8,7 @@ use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
+use sigilvault_locked::LockedKey;
 use zeroize::{Zeroize, ZeroizeOnDrop, Zeroizing};
 
 use crate::crypto::{self, KEY_LEN, KdfParams, SALT_LEN, Sealed, SecretKey};
@@ -271,15 +272,37 @@ struct Body {
     backup_key: Option<BackupKey>,
 }
 
-/// Chave de backup (256 bits). / Backup key (256 bits).
-#[derive(Clone, Serialize, Deserialize, Zeroize, ZeroizeOnDrop)]
-#[serde(transparent)]
-struct BackupKey(#[serde(with = "crate::hex::array")] [u8; KEY_LEN]);
+/// Chave de backup (256 bits), em memória travada. / Backup key (256 bits), in locked memory.
+#[derive(Clone, Zeroize, ZeroizeOnDrop)]
+struct BackupKey(LockedKey);
 
 impl BackupKey {
     fn random() -> Result<Self> {
-        Ok(Self(*crypto::random_key()?))
+        Ok(Self(lock(crypto::random_key()?)))
     }
+}
+
+impl Serialize for BackupKey {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> std::result::Result<S::Ok, S::Error> {
+        let hex = Zeroizing::new(crate::hex::encode(&*self.0));
+        s.serialize_str(&hex)
+    }
+}
+
+impl<'de> Deserialize<'de> for BackupKey {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> std::result::Result<Self, D::Error> {
+        use serde::de::Error as _;
+        let hex = Zeroizing::new(String::deserialize(d)?);
+        let bytes = Zeroizing::new(crate::hex::decode(&hex).ok_or_else(|| D::Error::custom("hex inválido / invalid hex"))?);
+        let key: &[u8; KEY_LEN] = bytes.as_slice().try_into().map_err(|_| D::Error::custom("tamanho errado / wrong length"))?;
+        Ok(Self(LockedKey::new(key)))
+    }
+}
+
+/// Move uma chave para memória travada (a cópia temporária é apagada ao sair).
+/// Moves a key into locked memory (the temporary copy is wiped on drop).
+fn lock(key: SecretKey) -> LockedKey {
+    LockedKey::new(&key)
 }
 
 /// Resultado de abrir o cofre com um código de recuperação.
@@ -299,8 +322,10 @@ pub struct Vault {
     vault_id: [u8; VAULT_ID_LEN],
     revision: u64,
     recovery_salt: [u8; SALT_LEN],
-    vault_key: SecretKey,
-    field_key: SecretKey,
+    /// Chaves em memória travada (fora do arquivo de paginação).
+    /// Keys in locked memory (kept out of the page file).
+    vault_key: LockedKey,
+    field_key: LockedKey,
     password_slot: PasswordSlot,
     recovery_slots: Vec<RecoverySlot>,
     body: Body,
@@ -395,10 +420,10 @@ impl Vault {
             vault_id,
             revision: 0,
             recovery_salt,
-            field_key: derive_field_key(&vault_key, &vault_id)?,
+            field_key: lock(derive_field_key(&vault_key, &vault_id)?),
             password_slot: make_password_slot(&vault_id, &vault_key, master_password, kdf)?,
             recovery_slots: make_recovery_slots(&vault_id, &vault_key, &publics)?,
-            vault_key,
+            vault_key: lock(vault_key),
             body: Body {
                 username: username.to_owned(),
                 recovery_keys: publics,
@@ -483,8 +508,8 @@ impl Vault {
             vault_id: h.vault_id,
             revision: h.revision,
             recovery_salt: h.recovery_salt,
-            field_key: derive_field_key(&vault_key, &h.vault_id)?,
-            vault_key,
+            field_key: lock(derive_field_key(&vault_key, &h.vault_id)?),
+            vault_key: lock(vault_key),
             password_slot: h.password_slot,
             recovery_slots: h.recovery_slots,
             body,
@@ -521,8 +546,8 @@ impl Vault {
         self.body.recovery_keys = recovery_keys;
         self.password_slot = password_slot;
         self.recovery_slots = recovery_slots;
-        self.vault_key = new_key;
-        self.field_key = new_field_key;
+        self.vault_key = lock(new_key);
+        self.field_key = lock(new_field_key);
         Ok(())
     }
 
@@ -587,6 +612,13 @@ impl Vault {
     /// Revisão atual (aumenta a cada gravação). / Current revision (grows on every save).
     pub fn revision(&self) -> u64 {
         self.revision
+    }
+
+    /// As chaves do cofre estão travadas na RAM (fora do arquivo de paginação)? Sempre `false`
+    /// fora do Windows. / Are the vault keys locked in RAM (kept out of the page file)? Always
+    /// `false` outside Windows.
+    pub fn keys_locked(&self) -> bool {
+        self.vault_key.is_locked() && self.field_key.is_locked() && self.body.backup_key.as_ref().is_none_or(|k| k.0.is_locked())
     }
 
     /// Quantos códigos de recuperação ainda valem. / How many recovery codes are still valid.

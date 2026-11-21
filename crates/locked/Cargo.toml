@@ -1,0 +1,16 @@
+[package]
+name = "sigilvault-locked"
+version = "0.1.0"
+edition = "2024"
+description = "Chaves em memória travada (fora do arquivo de paginação) / Keys in locked memory (kept out of the page file)"
+license = "UNLICENSED"
+publish = false
+
+[dependencies]
+zeroize = "1.9.2"
+
+[target."cfg(windows)".dependencies]
+windows-sys = { version = "0.61.2", features = ["Win32_System_Memory"] }
+
+[lints.rust]
+missing_docs = "warn"
