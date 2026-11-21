@@ -62,7 +62,7 @@ pub fn open_quick(app: &AppHandle) {
     let label = format!("{QUICK_PREFIX}{}", COUNTER.fetch_add(1, Ordering::Relaxed) + 1);
     let built = WebviewWindowBuilder::new(app, label, WebviewUrl::App("quick.html".into()))
         .title("SigilVault")
-        .inner_size(500.0, 460.0)
+        .inner_size(520.0, 640.0)
         .resizable(false)
         .always_on_top(true)
         .skip_taskbar(true)

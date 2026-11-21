@@ -179,6 +179,12 @@ fn type_error(e: TypeError) -> CmdError {
 /// Confere se dá para digitar no alvo. / Checks whether the target can be typed into.
 fn typable(target: Option<&Target>) -> CmdResult<Target> {
     let t = target.ok_or(CmdError::new("no_target"))?;
+    // Programa fechado: dizer isso (e não "administrador", que é o que a consulta de privilégio
+    // concluiria por segurança). / Program closed: say so (not "administrator", which the
+    // privilege query would conclude for safety).
+    if !t.exists() {
+        return Err(CmdError::new("target_gone"));
+    }
     if t.is_browser() {
         return Err(CmdError::new("browser_target"));
     }

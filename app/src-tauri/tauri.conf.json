@@ -38,7 +38,8 @@
         "frame-ancestors": "'none'"
       },
       "capabilities": [
-        "main"
+        "main",
+        "quick"
       ]
     }
   },

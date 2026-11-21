@@ -1076,6 +1076,9 @@ select.input {
   flex-direction: column;
   gap: 10px;
   height: 100vh;
+  /* Conteúdo maior que a janela (modo gerar): rola, nunca corta botões.
+     Content taller than the window (generate mode): scrolls, never cuts buttons. */
+  overflow-y: auto;
   padding: 14px 16px;
   border-radius: 0;
 }

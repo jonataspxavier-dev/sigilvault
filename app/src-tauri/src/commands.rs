@@ -576,4 +576,17 @@ mod tests {
         assert_eq!(granted, expected);
         assert_eq!(cap["windows"], serde_json::json!(["quick-*"]));
     }
+
+    /// Toda permissão da pasta `capabilities` precisa estar ativada no `tauri.conf.json`
+    /// (senão a janela fica sem poder chamar nada).
+    /// Every capability in the `capabilities` folder must be enabled in `tauri.conf.json`
+    /// (otherwise the window cannot call anything).
+    #[test]
+    fn all_capabilities_are_enabled() {
+        let conf: serde_json::Value = serde_json::from_str(include_str!("../tauri.conf.json")).unwrap();
+        let enabled = &conf["app"]["security"]["capabilities"];
+        for id in ["main", "quick"] {
+            assert!(enabled.as_array().unwrap().iter().any(|c| c == id), "{id}");
+        }
+    }
 }

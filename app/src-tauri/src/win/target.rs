@@ -11,7 +11,7 @@ use sigilvault_ipc::process;
 use windows_sys::Win32::Foundation::{CloseHandle, HANDLE, HWND};
 use windows_sys::Win32::Security::{GetSidSubAuthority, GetSidSubAuthorityCount, GetTokenInformation, TOKEN_MANDATORY_LABEL, TOKEN_QUERY, TokenIntegrityLevel};
 use windows_sys::Win32::System::Threading::{GetCurrentProcess, OpenProcess, OpenProcessToken, PROCESS_QUERY_LIMITED_INFORMATION};
-use windows_sys::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowTextW, GetWindowThreadProcessId};
+use windows_sys::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowTextW, GetWindowThreadProcessId, IsWindow};
 
 /// Navegadores: lá quem preenche é a extensão (o planejamento proíbe o Auto-Type neles).
 /// Browsers: the extension fills there (the plan forbids Auto-Type in them).
@@ -117,6 +117,19 @@ impl Target {
         }
     }
 
+    /// A janela ainda existe e pertence ao mesmo processo? / Does the window still exist and belong to the same process?
+    pub fn exists(&self) -> bool {
+        // SAFETY: consultas simples sobre um HWND (que pode não existir mais). / Simple queries on an HWND (that may be gone).
+        unsafe {
+            if IsWindow(self.hwnd as HWND) == 0 {
+                return false;
+            }
+            let mut pid = 0u32;
+            GetWindowThreadProcessId(self.hwnd as HWND, &mut pid);
+            pid == self.pid
+        }
+    }
+
     /// A mesma janela (e o mesmo processo) continua em primeiro plano?
     /// Is the same window (and the same process) still in the foreground?
     pub fn still_foreground(&self) -> bool {
@@ -158,6 +171,8 @@ mod tests {
         let me = Target { hwnd: 0, pid: std::process::id(), exe: std::env::current_exe().unwrap(), title: String::new() };
         assert!(me.is_ours());
         assert!(!me.elevated());
+        // Janela que não existe (HWND 0): o programa foi fechado. / Nonexistent window (HWND 0): the program was closed.
+        assert!(!me.exists());
         // Processo que não existe: tratado como privilegiado (não digita). / Nonexistent process: treated as privileged.
         assert!(Target { pid: u32::MAX - 3, ..me }.elevated());
     }
