@@ -17,6 +17,8 @@ pub mod pipe;
 #[cfg(windows)]
 pub mod process;
 #[cfg(windows)]
+pub mod protected;
+#[cfg(windows)]
 pub mod signature;
 #[cfg(windows)]
 mod user;

@@ -4,9 +4,11 @@
 //! Regra / Rule ([`peer_allowed`]):
 //! - os dois assinados, com assinatura válida e o MESMO certificado → aceito;
 //!   both signed, valid signature and the SAME certificate → accepted;
-//! - os dois sem assinatura → aceito só em builds de depuração (ainda não há certificado; ele vem
-//!   na fase 7); both unsigned → accepted only in debug builds (there is no certificate yet; it
-//!   comes in phase 7);
+//! - os dois sem assinatura → aceito em builds de depuração, ou numa INSTALAÇÃO PROTEGIDA (mesma
+//!   pasta, que o usuário atual não consegue alterar — ex.: Program Files). Sem certificado por
+//!   enquanto, é o que protege a versão instalada; both unsigned → accepted in debug builds, or in
+//!   a PROTECTED INSTALL (same folder, which the current user cannot change — e.g. Program
+//!   Files). With no certificate for now, that is what protects the installed version;
 //! - qualquer outra combinação → recusado. / any other combination → refused.
 
 use std::path::Path;
@@ -100,7 +102,7 @@ unsafe fn leaf_certificate_hash(data: &WINTRUST_DATA) -> Option<[u8; 32]> {
 pub fn peer_allowed(own: &Path, peer: &Path) -> bool {
     match (signer(own), signer(peer)) {
         (Signer::Trusted(a), Signer::Trusted(b)) => a == b,
-        (Signer::Unsigned, Signer::Unsigned) => cfg!(debug_assertions),
+        (Signer::Unsigned, Signer::Unsigned) => cfg!(debug_assertions) || crate::protected::protected_install(own, peer),
         _ => false,
     }
 }
