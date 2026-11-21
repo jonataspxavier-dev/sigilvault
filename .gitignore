@@ -51,9 +51,9 @@ Desktop.ini
 .DS_Store
 
 # ── Claude Code ────────────────────────────────────────────────────
-# Configurações pessoais ficam fora; as do projeto entram.
-# Personal settings stay out; project settings are committed.
-.claude/settings.local.json
+# A pasta inteira fica só no computador de quem desenvolve.
+# The whole folder stays only on the developer's computer.
+.claude/
 
 # Binários copiados para o instalador / Binaries copied for the installer
 app/src-tauri/binaries/
