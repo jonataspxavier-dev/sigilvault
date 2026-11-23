@@ -13,6 +13,8 @@
     "allow-quick-search",
     "allow-quick-type",
     "allow-quick-save-program",
-    "allow-quick-close"
+    "allow-quick-close",
+    "allow-quick-offer-accept",
+    "allow-quick-ignore-program"
   ]
 }

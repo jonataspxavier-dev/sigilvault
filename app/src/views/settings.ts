@@ -126,6 +126,53 @@ function hotkeysSection(): HTMLElement {
   return form;
 }
 
+/** Programas do computador: selo, oferta de salvar e programas ignorados (salva na hora).
+ *  Desktop programs: seal, save offer and ignored programs (saves right away). */
+function desktopSection(): HTMLElement {
+  const s = session.settings!;
+  const err = errorBox();
+  const save = async (patch: Partial<typeof s>) => {
+    err.clear();
+    try {
+      session.settings = await api.saveSettings({ ...session.settings!, ...patch });
+      toast(t("set_saved"));
+      renderIgnored();
+    } catch (ex) {
+      err.show(errorMessage(ex));
+    }
+  };
+  const seal = h("input", { type: "checkbox", checked: s.desktopSeal });
+  const offer = h("input", { type: "checkbox", checked: s.desktopOffer });
+  seal.addEventListener("change", () => void save({ desktopSeal: seal.checked }));
+  offer.addEventListener("change", () => void save({ desktopOffer: offer.checked }));
+  const list = h("ul", { class: "ignored-list" });
+  const renderIgnored = () => {
+    const ignored = session.settings!.desktopIgnored;
+    if (ignored.length === 0) return list.replaceChildren(h("li", { class: "muted" }, t("set_desktop_ignored_none")));
+    list.replaceChildren(
+      ...ignored.map((path) =>
+        h(
+          "li",
+          null,
+          h("span", { title: path }, path.split("\\").pop() ?? path),
+          button(t("set_desktop_remove"), { variant: "ghost", onClick: () => void save({ desktopIgnored: session.settings!.desktopIgnored.filter((p) => p !== path) }) }),
+        ),
+      ),
+    );
+  };
+  renderIgnored();
+  return h(
+    "div",
+    { class: "stack" },
+    h("label", { class: "check" }, seal, h("span", null, t("set_desktop_seal"))),
+    h("label", { class: "check" }, offer, h("span", null, t("set_desktop_offer"))),
+    h("p", { class: "field-hint" }, t("set_desktop_hint")),
+    h("span", { class: "field-label" }, t("set_desktop_ignored")),
+    list,
+    err.el,
+  );
+}
+
 /** Registro dos últimos preenchimentos feitos pelos navegadores. / Log of the latest fills made by the browsers. */
 function fillLogSection(): HTMLElement {
   const list = h("ol", { class: "fill-log" });
@@ -150,20 +197,34 @@ export function settingsPanel(username: string, onLanguageChange: () => void): H
 
   // Preferências / Preferences
   const lang = h("select", { class: "input" }, h("option", { value: "pt", selected: s.language === "pt" }, "Português (Brasil)"), h("option", { value: "en", selected: s.language === "en" }, "English"));
-  const autolock = h("input", { type: "number", class: "input input-narrow", min: 1, max: 120, value: String(s.autoLockMinutes) });
+  const autolock = h("input", { type: "number", class: "input input-narrow", min: 1, max: 120, value: String(s.autoLockMinutes), "aria-label": t("set_lock_idle_after") });
+  // Modo de bloqueio: por tempo ou "manter aberto". / Lock mode: by time or "keep open".
+  const lockIdle = h("input", { type: "radio", name: "lock-mode", checked: s.autoLock });
+  const lockKeep = h("input", { type: "radio", name: "lock-mode", checked: !s.autoLock });
+  const syncLock = () => (autolock.disabled = lockKeep.checked);
+  lockIdle.addEventListener("change", syncLock);
+  lockKeep.addEventListener("change", syncLock);
+  syncLock();
+  const lockField = h(
+    "div",
+    { class: "stack lock-mode" },
+    h("span", { class: "field-label" }, t("set_lock_title")),
+    h("label", { class: "check radio" }, lockIdle, h("span", null, t("set_lock_idle_before"), autolock, t("set_lock_idle_after"))),
+    h("label", { class: "check radio" }, lockKeep, h("span", null, h("strong", null, t("set_lock_keep")), h("span", { class: "field-hint block" }, t("set_lock_keep_hint")))),
+  );
   const clip = h("input", { type: "number", class: "input input-narrow", min: 10, max: 120, value: String(s.clipboardClearSecs) });
   const startup = h("input", { type: "checkbox", checked: s.startWithWindows });
   const startupField = h("label", { class: "check" }, startup, h("span", null, t("set_startup"), h("span", { class: "field-hint block" }, t("set_startup_hint"))));
   const prefErr = errorBox();
   const prefSave = button(t("save"), { variant: "primary", icon: "seal", type: "submit" });
-  const prefForm = h("form", { class: "stack" }, field(t("set_language"), lang), field(t("set_autolock"), autolock), field(t("set_clipboard"), clip), startupField, prefErr.el, h("div", { class: "actions" }, prefSave));
+  const prefForm = h("form", { class: "stack" }, field(t("set_language"), lang), lockField, field(t("set_clipboard"), clip), startupField, prefErr.el, h("div", { class: "actions" }, prefSave));
   prefForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     prefErr.clear();
     try {
       const before = session.settings!.language;
       session.settings = await busy(prefSave, () =>
-        api.saveSettings({ ...session.settings!, language: lang.value as Lang, autoLockMinutes: Number(autolock.value), clipboardClearSecs: Number(clip.value), startWithWindows: startup.checked }),
+        api.saveSettings({ ...session.settings!, language: lang.value as Lang, autoLock: lockIdle.checked, autoLockMinutes: Number(autolock.value), clipboardClearSecs: Number(clip.value), startWithWindows: startup.checked }),
       );
       setLang(session.settings.language);
       toast(t("set_saved"));
@@ -238,6 +299,9 @@ export function settingsPanel(username: string, onLanguageChange: () => void): H
     divider(),
     h("h3", { class: "subtitle" }, t("set_hotkeys")),
     hotkeysSection(),
+    divider(),
+    h("h3", { class: "subtitle" }, t("set_desktop")),
+    desktopSection(),
     divider(),
     h("h3", { class: "subtitle" }, t("set_browsers")),
     browsersSection(),

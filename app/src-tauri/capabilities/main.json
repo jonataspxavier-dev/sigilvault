@@ -46,6 +46,8 @@
     "allow-quick-save-program",
     "allow-quick-close",
     "allow-hotkeys-in-use",
+    "allow-quick-offer-accept",
+    "allow-quick-ignore-program",
     "core:event:allow-listen",
     "core:event:allow-unlisten"
   ]

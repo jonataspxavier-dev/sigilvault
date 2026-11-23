@@ -70,16 +70,17 @@ pub fn run() {
             let handle = app.handle().clone();
             win::watcher::start(move || lock_app(&handle, false));
 
-            // Bloqueio por inatividade. / Lock on inactivity.
+            // Bloqueio por inatividade (desligado no modo "manter aberto").
+            // Lock on inactivity (off in "keep open" mode).
             let handle = app.handle().clone();
             std::thread::spawn(move || loop {
                 std::thread::sleep(IDLE_POLL);
                 let state = handle.state::<AppState>();
-                let (unlocked, minutes) = {
+                let (unlocked, enabled, minutes) = {
                     let inner = state.lock();
-                    (inner.vault.is_some(), inner.settings.auto_lock_minutes)
+                    (inner.vault.is_some(), inner.settings.auto_lock, inner.settings.auto_lock_minutes)
                 };
-                if unlocked && win::system::idle_millis() >= u64::from(minutes) * 60_000 {
+                if unlocked && enabled && win::system::idle_millis() >= u64::from(minutes) * 60_000 {
                     lock_app(&handle, false);
                 }
             });
@@ -142,6 +143,8 @@ pub fn run() {
             desktop::quick_type,
             desktop::quick_save_program,
             desktop::quick_close,
+            desktop::quick_offer_accept,
+            desktop::quick_ignore_program,
             desktop::hotkeys_in_use,
         ])
         .build(tauri::generate_context!())

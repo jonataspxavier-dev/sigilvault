@@ -3,6 +3,7 @@
 
 pub mod clipboard;
 pub mod dpapi;
+pub mod fields;
 pub mod hotkeys;
 pub mod startup;
 pub mod system;

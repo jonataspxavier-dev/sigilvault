@@ -88,6 +88,53 @@ pub fn open_quick(app: &AppHandle) {
     }
 }
 
+/// Abre o aviso "Guardar este login?": a mesma página do pop-up, pequena, no canto inferior
+/// direito e SEM roubar o foco do programa onde a pessoa acabou de entrar.
+/// Opens the "Keep this login?" notice: the same popup page, small, in the bottom-right corner
+/// and WITHOUT stealing focus from the program the person just signed in to.
+pub fn open_offer(app: &AppHandle) {
+    destroy_quick(app);
+    let label = format!("{QUICK_PREFIX}{}", COUNTER.fetch_add(1, Ordering::Relaxed) + 1);
+    let Ok(w) = WebviewWindowBuilder::new(app, label, WebviewUrl::App("quick.html".into()))
+        .title("SigilVault")
+        .inner_size(OFFER_SIZE.0, OFFER_SIZE.1)
+        .resizable(false)
+        .decorations(false)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .focused(false)
+        .visible(false)
+        .additional_browser_args(WEBVIEW_ARGS)
+        .build()
+    else {
+        return;
+    };
+    // Canto inferior direito da área de trabalho (acima da barra de tarefas).
+    // Bottom-right corner of the work area (above the taskbar).
+    if let Ok(Some(m)) = w.primary_monitor() {
+        let scale = m.scale_factor();
+        let area = m.work_area();
+        let (ww, wh) = ((OFFER_SIZE.0 * scale) as i32, (OFFER_SIZE.1 * scale) as i32);
+        let margin = (16.0 * scale) as i32;
+        let x = area.position.x + area.size.width as i32 - ww - margin;
+        let y = area.position.y + area.size.height as i32 - wh - margin;
+        let _ = w.set_position(tauri::PhysicalPosition::new(x, y));
+    }
+    let _ = w.show();
+}
+
+/// Tamanho do aviso (lógico). / Notice size (logical).
+const OFFER_SIZE: (f64, f64) = (452.0, 200.0);
+
+/// Transforma o aviso no pop-up normal: decorado, maior, no centro e com foco.
+/// Turns the notice into the regular popup: decorated, bigger, centered and focused.
+pub fn grow_offer(w: &WebviewWindow) {
+    let _ = w.set_decorations(true);
+    let _ = w.set_size(tauri::LogicalSize::new(520.0, 640.0));
+    let _ = w.center();
+    let _ = w.set_focus();
+}
+
 /// Fecha o pop-up rápido (se houver). / Closes the quick popup (if any).
 pub fn destroy_quick(app: &AppHandle) {
     for (label, w) in app.webview_windows() {

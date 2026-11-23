@@ -71,7 +71,20 @@ pub struct Settings {
     pub hotkey_generate: String,
     /// Abrir na bandeja ao entrar no Windows (cofre bloqueado). / Open in the tray at Windows sign-in (vault locked).
     pub start_with_windows: bool,
+    /// Bloquear após `auto_lock_minutes` sem uso. Desligado = "manter aberto" (ainda bloqueia com
+    /// Win+L, suspensão e logoff). / Lock after `auto_lock_minutes` idle. Off = "keep open" (still
+    /// locks on Win+L, suspend and logoff).
+    pub auto_lock: bool,
+    /// Selo do SigilVault nos campos de senha dos programas. / SigilVault seal in programs' password fields.
+    pub desktop_seal: bool,
+    /// Oferecer "Guardar este login?" depois de entrar num programa. / Offer "Keep this login?" after signing in to a program.
+    pub desktop_offer: bool,
+    /// Programas (caminho normalizado do .exe) sem selo e sem oferta. / Programs (normalized .exe path) with no seal and no offer.
+    pub desktop_ignored: Vec<String>,
 }
+
+/// Limite da lista de programas ignorados. / Limit of the ignored programs list.
+pub const MAX_IGNORED: usize = 200;
 
 impl Default for Settings {
     fn default() -> Self {
@@ -83,6 +96,10 @@ impl Default for Settings {
             hotkey_search: "Ctrl+Shift+Space".into(),
             hotkey_generate: "Ctrl+Shift+G".into(),
             start_with_windows: false,
+            auto_lock: true,
+            desktop_seal: true,
+            desktop_offer: true,
+            desktop_ignored: Vec::new(),
         }
     }
 }
@@ -105,6 +122,16 @@ impl Settings {
                 *value = crate::win::hotkeys::parse(value).map(crate::win::hotkeys::format).unwrap_or(default);
             }
         }
+        // Programas ignorados: caminho normalizado, sem repetição, com limite.
+        // Ignored programs: normalized path, no duplicates, with a limit.
+        let mut ignored: Vec<String> = Vec::new();
+        for p in self.desktop_ignored.drain(..) {
+            let n = sigilvault_core::normalize_path(&p);
+            if !n.is_empty() && n.len() <= 1000 && !ignored.contains(&n) && ignored.len() < MAX_IGNORED {
+                ignored.push(n);
+            }
+        }
+        self.desktop_ignored = ignored;
         self.clipboard_clear_secs = self.clipboard_clear_secs.clamp(10, 120);
         self.generator.length = self.generator.length.clamp(4, sigilvault_core::generator::MAX_LENGTH);
         let g = &self.generator;
@@ -144,8 +171,13 @@ mod tests {
             hotkey_search: "shift+a".into(),
             hotkey_generate: "  ".into(),
             start_with_windows: true,
+            auto_lock: false,
+            desktop_seal: true,
+            desktop_offer: false,
+            desktop_ignored: vec![r"C:\Jogos\Game.EXE".into(), r"c:\jogos\game.exe".into(), "  ".into()],
         }
         .sanitized();
+        assert_eq!(s.desktop_ignored.len(), 1, "{:?}", s.desktop_ignored);
         assert_eq!(s.hotkey_search, "Ctrl+Shift+Space");
         assert_eq!(s.hotkey_generate, "");
         assert_eq!(Settings { hotkey_search: "alt + k".into(), ..Settings::default() }.sanitized().hotkey_search, "Alt+K");

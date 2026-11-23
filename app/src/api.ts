@@ -26,6 +26,14 @@ export interface Settings {
   hotkeyGenerate: string;
   /** Abrir na bandeja ao entrar no Windows. / Open in the tray at Windows sign-in. */
   startWithWindows: boolean;
+  /** false = "manter aberto" (só Win+L, suspensão e logoff bloqueiam). / false = "keep open". */
+  autoLock: boolean;
+  /** Selo nos campos de senha dos programas. / Seal in programs' password fields. */
+  desktopSeal: boolean;
+  /** Oferecer "Guardar este login?". / Offer "Keep this login?". */
+  desktopOffer: boolean;
+  /** Programas ignorados (caminho do .exe). / Ignored programs (.exe path). */
+  desktopIgnored: string[];
 }
 
 /** Item com problema no relatório de saúde (sem senha). / Item with a problem in the health report (no password). */
@@ -151,12 +159,16 @@ export interface PairingEvent {
 
 /** Pop-up rápido: para onde vai digitar. / Quick popup: where it will type. */
 export interface QuickContext {
-  mode: "search" | "generate";
+  mode: "search" | "generate" | "offer";
   target: { exeName: string; exePath: string; title: string; browser: boolean; elevated: boolean } | null;
   unlocked: boolean;
   username: string | null;
   language: Lang;
   generator: GeneratorPrefs;
+  /** Usuário sugerido (aviso ou selo). / Suggested username (notice or seal). */
+  prefillUsername: string;
+  /** Aberto pelo selo do campo de senha. / Opened by the password field seal. */
+  fromField: boolean;
 }
 
 export interface QuickItem {
@@ -212,6 +224,8 @@ export const api = {
   quickSaveProgram: (title: string, username: string, password: string, typeIt: boolean) =>
     invoke<string>("quick_save_program", { title, username, password, typeIt }),
   quickClose: () => invoke<void>("quick_close"),
+  quickOfferAccept: () => invoke<void>("quick_offer_accept"),
+  quickIgnoreProgram: () => invoke<void>("quick_ignore_program"),
   hotkeysInUse: () => invoke<("search" | "generate")[]>("hotkeys_in_use"),
   revealHistory: (id: string) => invoke<{ changedAt: number; password: string }[]>("reveal_history", { id }),
   // Fase 7. / Phase 7.

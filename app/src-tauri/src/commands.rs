@@ -587,6 +587,7 @@ pub fn save_settings(app: AppHandle, state: State<'_, AppState>, settings: Setti
     };
     if language_changed {
         tray::refresh_menu(&app);
+        crate::desktop::apply_language(&settings.language);
     }
     crate::desktop::apply_hotkeys(&app, &settings);
     crate::apply_startup(settings.start_with_windows)?;
@@ -623,7 +624,7 @@ mod tests {
         granted.sort();
         let mut expected = vec![
             "allow-unlock", "allow-generate-password", "allow-copy-field", "allow-quick-context", "allow-quick-search",
-            "allow-quick-type", "allow-quick-save-program", "allow-quick-close",
+            "allow-quick-type", "allow-quick-save-program", "allow-quick-close", "allow-quick-offer-accept", "allow-quick-ignore-program",
         ];
         expected.sort();
         assert_eq!(granted, expected);

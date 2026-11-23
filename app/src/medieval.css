@@ -474,3 +474,93 @@ body {
 
 /* Animações sempre ligadas, mesmo com "Mostrar animações" desligado no Windows (escolha do projeto).
    Animations always on, even with Windows' "Show animations" off (project choice). */
+
+/* ── Aviso "Guardar este login?" (janela pequena no canto) / "Keep this login?" notice (small corner window) ── */
+.offer-body .quick.offer {
+  height: 100vh;
+  gap: 8px;
+  padding: 14px 18px 12px;
+  animation: offerIn 0.35s cubic-bezier(0.3, 0.7, 0.2, 1) both;
+}
+
+@keyframes offerIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.offer-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.offer-logo {
+  width: 36px;
+  height: 36px;
+  filter: drop-shadow(0 0 5px var(--ember-glow));
+}
+
+.offer .title {
+  margin: 0;
+  font-size: 23px;
+}
+
+.offer p {
+  margin: 0;
+}
+
+.offer-user {
+  font-family: var(--font-mono);
+  color: var(--parchment);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.offer-actions {
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+.offer-right {
+  display: flex;
+  gap: 8px;
+}
+
+/* Modo de bloqueio nas Configurações / Lock mode in Settings */
+.lock-mode .input-narrow {
+  display: inline-block;
+  width: 72px;
+  padding: 3px 8px;
+  margin: 0 4px;
+}
+
+.ignored-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ignored-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 10px;
+  border: 1px solid #2a2a2f;
+  border-radius: 3px;
+  background: #0b0b0d;
+  overflow-wrap: anywhere;
+}
+
+.offer-actions {
+  flex-wrap: nowrap;
+}
+
+.offer-actions .btn-ghost {
+  padding: 6px 10px;
+  font-size: 12.5px;
+}

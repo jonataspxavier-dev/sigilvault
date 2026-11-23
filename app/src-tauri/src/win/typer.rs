@@ -27,6 +27,11 @@ use super::target::Target;
 pub enum Part {
     Text(Zeroizing<String>),
     Tab,
+    /// Ctrl+A: o texto seguinte substitui o que já estava no campo. / Ctrl+A: the next text replaces what was in the field.
+    SelectAll,
+    /// Põe o foco num campo do programa (pela UI Automation); `false` = não deu.
+    /// Focuses a field of the program (through UI Automation); `false` = it failed.
+    Focus(Box<dyn Fn() -> bool + Send + Sync>),
 }
 
 /// Por que a digitação não aconteceu (ou parou). / Why typing did not happen (or stopped).
@@ -58,6 +63,8 @@ fn key(vk: u16, scan: u16, flags: u32) -> INPUT {
 fn events(part: &Part) -> Vec<INPUT> {
     match part {
         Part::Tab => vec![key(VK_TAB, 0, 0), key(VK_TAB, 0, KEYEVENTF_KEYUP)],
+        Part::SelectAll => vec![key(VK_CONTROL, 0, 0), key(0x41, 0, 0), key(0x41, 0, KEYEVENTF_KEYUP), key(VK_CONTROL, 0, KEYEVENTF_KEYUP)],
+        Part::Focus(_) => Vec::new(),
         Part::Text(text) => text
             .encode_utf16()
             .flat_map(|unit| [key(0, unit, KEYEVENTF_UNICODE), key(0, unit, KEYEVENTF_UNICODE | KEYEVENTF_KEYUP)])
@@ -93,6 +100,13 @@ pub fn type_into(target: &Target, parts: &[Part]) -> Result<(), TypeError> {
     for part in parts {
         if !target.still_foreground() {
             return Err(TypeError::WindowChanged);
+        }
+        if let Part::Focus(focus) = part {
+            if !focus() {
+                return Err(TypeError::WindowChanged);
+            }
+            std::thread::sleep(Duration::from_millis(80));
+            continue;
         }
         let mut inputs = events(part);
         // SAFETY: vetor de INPUT válido do tamanho informado. / Valid INPUT vector of the given size.
