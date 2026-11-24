@@ -5,7 +5,7 @@ import { api, isCmdError, type AppState } from "../api";
 import { h, mount } from "../dom";
 import { t } from "../i18n";
 import { icon } from "../icons";
-import { runes, sealBreak, smoke } from "../motion";
+import { dragonWake, runes, smoke } from "../motion";
 import { nav, session } from "../nav";
 import { busy, button, divider, errorBox, errorMessage, field, modal, passwordInput, strengthMeter, textInput } from "../ui";
 import { formatCodeInput } from "../util";
@@ -172,8 +172,8 @@ export function showUnlock(state: AppState): void {
       const res = await busy(submit, () => api.unlock(pw.input.value));
       pw.input.value = "";
       session.remainingCodes = res.remainingCodes;
-      // O selo se parte por cima enquanto o cofre aparece. / The seal breaks on top while the vault appears.
-      sealBreak();
+      // O dragão desperta por cima enquanto o cofre aparece. / The dragon awakens on top while the vault appears.
+      dragonWake();
       nav().vault({ rollbackWarning: res.rollbackWarning });
     } catch (ex) {
       pw.input.select();

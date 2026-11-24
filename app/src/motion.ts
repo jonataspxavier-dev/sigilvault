@@ -36,49 +36,31 @@ export function smoke(): HTMLElement {
   return el;
 }
 
-const SEAL_SHAPE = "M45 8l7 5 9-1 3 8 8 4-2 9 5 7-6 6 1 9-9 3-4 8-9-2-7 6-7-6-9 2-4-8-9-3 1-9-6-6 5-7-2-9 8-4 3-8 9 1z";
-
-/** Face do selo (cera, anel e runa ↑). / Seal face (wax, ring and ↑ rune). */
-function sealFace(): SVGElement[] {
-  return [
-    s("path", { d: SEAL_SHAPE, fill: "url(#sv-wax)" }),
-    s("circle", { cx: 45, cy: 45, r: 21, fill: "none", stroke: "#e98a7e", "stroke-opacity": 0.5, "stroke-width": 2 }),
-    s("path", { d: "M45 33v24M38 40l7-7 7 7", stroke: "#f3c8b8", "stroke-opacity": 0.75, "stroke-width": 3, fill: "none", "stroke-linecap": "round" }),
-  ];
-}
-
-/** Selo de cera que racha e se abre por cima da tela (ao desbloquear). / Wax seal that cracks open over the screen (on unlock). */
-export function sealBreak(): void {
-  const defs = s(
-    "defs",
-    {},
-    s(
-      "radialGradient",
-      { id: "sv-wax", cx: 0.38, cy: 0.32, r: 0.75 },
-      s("stop", { offset: 0, "stop-color": "#cf4141" }),
-      s("stop", { offset: 0.6, "stop-color": "#9b2226" }),
-      s("stop", { offset: 1, "stop-color": "#5e1014" }),
-    ),
-    s("clipPath", { id: "sv-cl" }, s("path", { d: "M0 0H47L40 30 50 48 41 66 46 90H0Z" })),
-    s("clipPath", { id: "sv-cr" }, s("path", { d: "M47 0H90V90H46L41 66 50 48 40 30Z" })),
-  );
+/** O dragão desperta (ao desbloquear): sai da penumbra, os olhos acendem em brasa, um anel de runas
+ *  se expande e tudo some revelando o cofre, que já carrega por baixo.
+ *  The dragon awakens (on unlock): it comes out of the shadows, its eyes light up like embers, a
+ *  ring of runes expands and everything fades revealing the vault, already loading underneath. */
+export function dragonWake(): void {
   const overlay = document.createElement("div");
-  overlay.className = "seal-overlay";
+  overlay.className = "wake-overlay";
   overlay.setAttribute("aria-hidden", "true");
-  overlay.append(
-    svgRoot(
-      "0 0 90 90",
-      "seal-break",
-      defs,
-      s("g", { class: "half left", "clip-path": "url(#sv-cl)" }, ...sealFace()),
-      s("g", { class: "half right", "clip-path": "url(#sv-cr)" }, ...sealFace()),
-      s("path", { class: "crack", d: "M47 4L40 30 50 48 41 66 46 86", stroke: "#1a0506", "stroke-width": 2, fill: "none" }),
-    ),
-  );
-  document.body.append(overlay);
-  window.setTimeout(() => overlay.remove(), 1500);
-}
 
+  const ticks = "M100 4v14M100 182v14M4 100h14M182 100h14M32 32l10 10M158 158l10 10M32 168l10-10M158 42l10-10";
+  const ring = svgRoot("0 0 200 200", "wake-ring", s("circle", { cx: 100, cy: 100, r: 90 }), s("path", { d: ticks }));
+
+  const dragon = document.createElement("div");
+  dragon.className = "wake-dragon";
+  const img = document.createElement("img");
+  img.src = "/dragao.png";
+  img.alt = "";
+  const eyes = document.createElement("div");
+  eyes.className = "wake-eyes";
+  dragon.append(img, eyes);
+
+  overlay.append(ring, dragon);
+  document.body.append(overlay);
+  window.setTimeout(() => overlay.remove(), 2000);
+}
 /** Faíscas douradas saindo de um elemento (ao copiar). / Golden sparks bursting from an element (on copy). */
 export function sparks(from: Element): void {
   const r = from.getBoundingClientRect();

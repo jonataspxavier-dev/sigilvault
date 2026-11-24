@@ -383,44 +383,81 @@ body {
   50% { filter: drop-shadow(0 0 6px rgba(240, 217, 160, 0.8)); }
 }
 
-/* ── Selo se partindo (ao desbloquear) / Seal breaking (on unlock) ── */
-.seal-overlay {
+/* ── O dragão desperta (ao desbloquear) / The dragon awakens (on unlock) ── */
+.wake-overlay {
   position: fixed;
   inset: 0;
   z-index: 1000;
   display: grid;
   place-items: center;
   pointer-events: none;
+  background: rgba(12, 12, 14, 0.92);
+  animation: wakeFade 0.55s ease-in 1.35s forwards;
 }
 
-.seal-break {
-  width: 140px;
-  height: 140px;
-  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.6));
+@keyframes wakeFade {
+  to { background: rgba(12, 12, 14, 0); }
 }
 
-.seal-break .half {
-  transform-box: view-box;
+.wake-dragon {
+  position: relative;
+  grid-area: 1 / 1;
+  width: 200px;
+  height: 200px;
+  animation: wakeOut 0.5s ease-in 1.4s forwards;
 }
 
-.seal-break .left { animation: crackL 0.9s cubic-bezier(0.5, 0, 0.3, 1) 0.35s forwards; }
-.seal-break .right { animation: crackR 0.9s cubic-bezier(0.5, 0, 0.3, 1) 0.35s forwards; }
-.seal-break .crack { stroke-dasharray: 120; stroke-dashoffset: 120; animation: crackLine 1.2s ease-out forwards; }
-
-@keyframes crackLine {
-  0% { stroke-dashoffset: 120; opacity: 1; }
-  30% { stroke-dashoffset: 0; opacity: 1; }
-  100% { stroke-dashoffset: 0; opacity: 0; }
+.wake-dragon img {
+  width: 200px;
+  height: 200px;
+  filter: brightness(0.55) drop-shadow(0 6px 14px rgba(0, 0, 0, 0.7));
+  animation: wake 1.2s ease-out forwards;
 }
 
-@keyframes crackL {
-  to { transform: translate(-26px, 14px) rotate(-18deg); opacity: 0; }
+@keyframes wake {
+  0% { filter: brightness(0.55) drop-shadow(0 6px 14px rgba(0, 0, 0, 0.7)); }
+  60% { filter: brightness(1.15) drop-shadow(0 0 22px rgba(255, 110, 40, 0.8)); }
+  100% { filter: brightness(1) drop-shadow(0 0 10px rgba(255, 110, 40, 0.4)); }
 }
 
-@keyframes crackR {
-  to { transform: translate(26px, 14px) rotate(18deg); opacity: 0; }
+/* Olhos em brasa sobre o desenho. / Ember eyes over the drawing. */
+.wake-eyes {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background:
+    radial-gradient(circle at 46.5% 26%, rgba(255, 140, 40, 0.95) 0 2.2%, transparent 4%),
+    radial-gradient(circle at 53.5% 26%, rgba(255, 140, 40, 0.95) 0 2.2%, transparent 4%);
+  animation: eyes 1.2s ease-out forwards;
 }
 
+@keyframes eyes {
+  0% { opacity: 0; }
+  30% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0.7; }
+}
+
+@keyframes wakeOut {
+  to { opacity: 0; transform: scale(1.15); }
+}
+
+.wake-ring {
+  grid-area: 1 / 1;
+  width: 220px;
+  height: 220px;
+  opacity: 0;
+  fill: none;
+  stroke: var(--gold-light);
+  stroke-width: 1.6;
+  animation: ring 1.1s ease-out 0.7s forwards;
+}
+
+@keyframes ring {
+  0% { opacity: 0; transform: scale(0.6) rotate(0); }
+  30% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.9) rotate(40deg); }
+}
 /* ── Pergaminho: o conteúdo do painel se desenrola / Parchment: the panel content unrolls ── */
 .panel.unroll > * {
   animation: unroll 0.55s cubic-bezier(0.3, 0.7, 0.2, 1) both;
