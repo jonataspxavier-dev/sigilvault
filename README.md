@@ -2,13 +2,26 @@
 
 🇧🇷 [Português](#português) · 🇺🇸 [English](#english)
 
+**⬇️ [Baixar a versão mais recente / Download the latest version](https://github.com/jonataspxavier-dev/sigilvault/releases)** · [Como instalar / How to install](docs/INSTALAR.md)
+
+<p align="center"><img src="docs/screenshots/unlock.png" width="720" alt="Tela de desbloqueio com o dragão guardião / Unlock screen with the guardian dragon"></p>
+
+| | |
+| :---: | :---: |
+| <img src="docs/screenshots/vault.png" width="420" alt=""><br>**Cofre / Vault** | <img src="docs/screenshots/generator.png" width="420" alt=""><br>**Forja de senhas / Password forge** |
+| <img src="docs/screenshots/health.png" width="420" alt=""><br>**Vigília das senhas / Password watch** | <img src="docs/screenshots/quick-search.png" width="260" alt=""><br>**Busca rápida nos programas / Quick search in programs** |
+| <img src="docs/screenshots/extension-fill.png" width="300" alt=""><br>**Extensão: preencher / Extension: fill** | <img src="docs/screenshots/extension-generate.png" width="300" alt=""><br>**Extensão: forjar senha / Extension: forge a password** |
+| <img src="docs/screenshots/keep-login.png" width="380" alt=""><br>**"Guardar este login?" / "Keep this login?"** | |
+
+<sub>Telas com dados de exemplo. / Screens with sample data.</sub>
+
 ---
 
 ## Português
 
 **SigilVault** é um gerenciador de senhas **local** para Windows. Ele guarda tudo criptografado no próprio computador, preenche senhas no navegador e em apps desktop e gera senhas fortes. Nada vai para a nuvem, a menos que você escolha.
 
-> Status: **Fase 7 em andamento**: instalador por máquina, memória travada, relatório de saúde e endurecimento prontos. Para instalar (versão de testes), veja o [guia de instalação](docs/INSTALAR.md).
+> Status: **Fase 7 em andamento**: instalador por máquina, memória travada, relatório de saúde e endurecimento prontos. Para instalar (versão de testes), baixe o instalador em [Releases](https://github.com/jonataspxavier-dev/sigilvault/releases) e siga o [guia de instalação](docs/INSTALAR.md).
 
 ### Visão geral
 
@@ -80,7 +93,7 @@ Requisitos: Rust estável (rustup), Node.js LTS e Visual Studio Build Tools com 
 
 **SigilVault** is a **local** password manager for Windows. It keeps everything encrypted on your own computer, fills passwords in the browser and in desktop apps, and generates strong passwords. Nothing goes to the cloud unless you choose so.
 
-> Status: **Phase 7 in progress**: per-machine installer, locked memory, health report and hardening are done. To install (test build), see the [install guide](docs/INSTALAR.md).
+> Status: **Phase 7 in progress**: per-machine installer, locked memory, health report and hardening are done. To install (test build), download the installer from [Releases](https://github.com/jonataspxavier-dev/sigilvault/releases) and follow the [install guide](docs/INSTALAR.md#english).
 
 ### Overview
 

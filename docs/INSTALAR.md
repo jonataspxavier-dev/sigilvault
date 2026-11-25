@@ -6,14 +6,15 @@
 
 ## Português
 
-Versão de testes para amigos. Ainda não tem certificado de assinatura nem está nas lojas de extensões, então a instalação tem alguns passos manuais.
+Versão de testes. Ainda não tem certificado de assinatura nem está nas lojas de extensões, então a instalação tem alguns passos manuais.
 
 ### 1. Instalar o app
 
-1. Rode `SigilVault_<versão>_x64-setup.exe`.
-2. O Windows vai mostrar **"O Windows protegeu o computador"** (SmartScreen), porque o instalador não é assinado. Clique em **Mais informações** → **Executar assim mesmo**. Só faça isso se recebeu o arquivo diretamente de quem você confia.
-3. Aceite o pedido de administrador. O app é instalado em `C:\Program Files\SigilVault`. Essa pasta só pode ser alterada por um administrador, e o app confia no conector da extensão justamente por isso. **Não copie os arquivos para outra pasta:** fora dela a extensão não conecta.
-4. Abra o SigilVault e crie o cofre. **Guarde os 10 códigos de recuperação** em papel. Sem a senha mestra e sem os códigos, ninguém (nem quem fez o app) consegue abrir o cofre.
+1. Baixe `SigilVault_<versão>_x64-setup.exe` em [Releases](https://github.com/jonataspxavier-dev/sigilvault/releases).
+2. Confira o arquivo no PowerShell: `Get-FileHash .\SigilVault_<versão>_x64-setup.exe`. O resultado tem que ser igual ao SHA-256 escrito na página da versão.
+3. Rode o instalador. O Windows vai mostrar **"O Windows protegeu o computador"** (SmartScreen), porque o instalador não é assinado. Clique em **Mais informações** → **Executar assim mesmo**. Só faça isso com o arquivo baixado daqui e conferido.
+4. Aceite o pedido de administrador. O app é instalado em `C:\Program Files\SigilVault`. Essa pasta só pode ser alterada por um administrador, e o app confia no conector da extensão justamente por isso. **Não copie os arquivos para outra pasta:** fora dela a extensão não conecta.
+5. Abra o SigilVault e crie o cofre. **Guarde os 10 códigos de recuperação** em papel. Sem a senha mestra e sem os códigos, ninguém (nem quem fez o app) consegue abrir o cofre.
 
 ### 2. Instalar a extensão
 
@@ -32,7 +33,8 @@ Versão de testes para amigos. Ainda não tem certificado de assinatura nem est�
 
 ### 3. Uso no dia a dia
 
-- O cofre bloqueia sozinho depois de alguns minutos sem usar o PC, ao bloquear o Windows ou ao suspender.
+- **Bloqueio:** em Configurações, escolha "Bloquear após X minutos" ou "Manter aberto". Nos dois casos o cofre bloqueia com Win+L, ao suspender ou ao sair da conta.
+- **Programas do computador:** ao clicar no campo de senha de um programa, o dragão aparece dentro do campo. Clique nele para preencher ou salvar uma conta. Depois de entrar digitando à mão, o SigilVault oferece guardar o login. Ele nunca lê o que você digita.
 - **Configurações → Iniciar com o Windows** deixa o app na bandeja ao ligar o PC. O cofre continua pedindo a senha.
 - **Saúde** mostra senhas fracas, repetidas ou antigas.
 - Atalhos: `Ctrl+Shift+Espaço` abre a busca e digita em programas; `Ctrl+Shift+G` gera uma senha nova.
@@ -48,14 +50,15 @@ Versão de testes para amigos. Ainda não tem certificado de assinatura nem est�
 
 ## English
 
-A test build for friends. It has no signing certificate yet and is not in the extension stores, so installing takes a few manual steps.
+A test build. It has no signing certificate yet and is not in the extension stores, so installing takes a few manual steps.
 
 ### 1. Install the app
 
-1. Run `SigilVault_<version>_x64-setup.exe`.
-2. Windows will show **"Windows protected your PC"** (SmartScreen), because the installer is not signed. Click **More info** → **Run anyway**. Only do this if you got the file directly from someone you trust.
-3. Accept the administrator prompt. The app is installed to `C:\Program Files\SigilVault`. Only an administrator can change that folder, which is exactly why the app trusts the extension connector. **Do not copy the files elsewhere:** outside that folder the extension will not connect.
-4. Open SigilVault and create your vault. **Keep the 10 recovery codes** on paper. Without the master password and the codes, nobody (not even the app's author) can open the vault.
+1. Download `SigilVault_<version>_x64-setup.exe` from [Releases](https://github.com/jonataspxavier-dev/sigilvault/releases).
+2. Verify the file in PowerShell: `Get-FileHash .\SigilVault_<version>_x64-setup.exe`. The result must match the SHA-256 on the release page.
+3. Run the installer. Windows will show **"Windows protected your PC"** (SmartScreen), because the installer is not signed. Click **More info** → **Run anyway**. Only do this with a file downloaded from here and verified.
+4. Accept the administrator prompt. The app is installed to `C:\Program Files\SigilVault`. Only an administrator can change that folder, which is exactly why the app trusts the extension connector. **Do not copy the files elsewhere:** outside that folder the extension will not connect.
+5. Open SigilVault and create your vault. **Keep the 10 recovery codes** on paper. Without the master password and the codes, nobody (not even the app's author) can open the vault.
 
 ### 2. Install the extension
 
@@ -74,7 +77,8 @@ A test build for friends. It has no signing certificate yet and is not in the ex
 
 ### 3. Everyday use
 
-- The vault locks by itself after a few idle minutes, when Windows locks or when the PC sleeps.
+- **Locking:** in Settings, pick "Lock after X minutes" or "Keep open". Either way the vault locks on Win+L, on sleep or on sign-out.
+- **Desktop programs:** when you click a program's password field, the dragon shows up inside it. Click it to fill or save an account. After you sign in by typing, SigilVault offers to keep the login. It never reads what you type.
 - **Settings → Start with Windows** keeps the app in the tray at sign-in. The vault still asks for the password.
 - **Health** lists weak, reused or old passwords.
 - Hotkeys: `Ctrl+Shift+Space` opens search and types into programs; `Ctrl+Shift+G` generates a new password.
