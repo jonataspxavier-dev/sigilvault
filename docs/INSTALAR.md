@@ -85,7 +85,7 @@ Depois, fixe o ícone, clique nele e siga o pareamento: o app mostra um código 
 - O aviso "Guardar este login?" depois de entrar num programa.
 - O selo desenhado dentro do campo (no Linux é uma notificação).
 - Digitar teclas em programas que não expõem o campo pela acessibilidade.
-- AppImage e Flatpak.
+- AppImage com a extensão do navegador (o AppImage abre o cofre e os programas, mas a ponte com o navegador exige o `.deb` ou o `.rpm`) e Flatpak.
 
 ---
 
@@ -172,4 +172,4 @@ Then pin the icon, click it and follow the pairing: the app shows an 8-character
 - The "Keep this login?" notice after signing in to a program.
 - The seal drawn inside the field (on Linux it is a notification).
 - Typing keys into programs that do not expose the field through accessibility.
-- AppImage and Flatpak.
+- AppImage with the browser extension (the AppImage opens the vault and programs, but the browser bridge needs the `.deb` or `.rpm`) and Flatpak.

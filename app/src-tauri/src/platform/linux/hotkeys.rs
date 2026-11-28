@@ -16,10 +16,10 @@ pub enum Action {
     Generate = 2,
 }
 
-const CTRL: u8 = 1;
-const ALT: u8 = 2;
-const SHIFT: u8 = 4;
-const SUPER: u8 = 8;
+pub(super) const CTRL: u8 = 1;
+pub(super) const ALT: u8 = 2;
+pub(super) const SHIFT: u8 = 4;
+pub(super) const SUPER: u8 = 8;
 
 /// Combinação de teclas. / Key combination.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -27,6 +27,18 @@ pub struct Combo {
     mods: u8,
     /// Nome canônico da tecla: `Space`, `F5`, `K`, `7`. / Canonical key name.
     key: String,
+}
+
+impl Combo {
+    /// Bits dos modificadores. / Modifier bits.
+    pub(super) fn mods(&self) -> u8 {
+        self.mods
+    }
+
+    /// Nome da tecla (`Space`, `F5`, `K`, `7`). / Key name.
+    pub(super) fn key(&self) -> &str {
+        &self.key
+    }
 }
 
 /// Lê "Ctrl+Shift+Espaço", "Alt+F2", "Super+K"… Exige Ctrl, Alt ou Super (Shift sozinho roubaria
@@ -104,6 +116,9 @@ type Handler = Box<dyn Fn(Action, Option<Target>) + Send + Sync>;
 type Request = (Vec<(Action, Option<Combo>)>, std::sync::mpsc::Sender<Vec<(Action, bool)>>);
 
 static HANDLER: std::sync::OnceLock<Handler> = std::sync::OnceLock::new();
+static X11: std::sync::OnceLock<std::sync::Arc<super::x11_keys::Display>> = std::sync::OnceLock::new();
+/// Atalhos ligados no X11: ação, combinação. / Hotkeys bound on X11: action, combination.
+static X11_BOUND: std::sync::Mutex<Vec<(Action, Combo)>> = std::sync::Mutex::new(Vec::new());
 static REQUESTS: std::sync::OnceLock<tokio::sync::mpsc::UnboundedSender<Request>> = std::sync::OnceLock::new();
 
 /// Identificador do app para os portais (igual ao do pacote). / App identifier for the portals (same as the package's).
@@ -121,6 +136,24 @@ pub fn start(on_press: impl Fn(Action, Option<Target>) + Send + Sync + 'static) 
     if HANDLER.set(Box::new(on_press)).is_err() {
         return;
     }
+    // No X11 os atalhos são do próprio servidor gráfico (e dá para saber se a combinação já é de outro).
+    // On X11 hotkeys belong to the display server itself (and we can tell if the combination is already taken).
+    if std::env::var("XDG_SESSION_TYPE").is_ok_and(|t| t == "x11")
+        && let Some(display) = super::x11_keys::Display::open()
+    {
+        let display = std::sync::Arc::new(display);
+        let _ = X11.set(display.clone());
+        let _ = std::thread::Builder::new().name("sigilvault-x11-keys".into()).spawn(move || {
+            while let Some((code, mods)) = display.wait_press() {
+                let bound = X11_BOUND.lock().unwrap_or_else(|e| e.into_inner()).clone();
+                let hit = bound.iter().find(|(_, combo)| display.code_of(combo) == Some(code) && display.mods_of(combo) == mods);
+                if let (Some((action, _)), Some(handler)) = (hit, HANDLER.get()) {
+                    handler(*action, super::target::foreground());
+                }
+            }
+        });
+        return;
+    }
     let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
     let _ = REQUESTS.set(tx);
     let _ = std::thread::Builder::new().name("sigilvault-hotkeys".into()).spawn(move || {
@@ -132,6 +165,28 @@ pub fn start(on_press: impl Fn(Action, Option<Target>) + Send + Sync + 'static) 
 /// Troca os atalhos. Devolve, para cada um, se o portal o aceitou. `None` desliga o atalho.
 /// Replaces the hotkeys. Returns, for each one, whether the portal accepted it. `None` turns it off.
 pub fn apply(bindings: Vec<(Action, Option<Combo>)>) -> Vec<(Action, bool)> {
+    if let Some(display) = X11.get() {
+        let mut bound = X11_BOUND.lock().unwrap_or_else(|e| e.into_inner());
+        let mut answers = Vec::new();
+        for (action, combo) in bindings {
+            if let Some(pos) = bound.iter().position(|(a, _)| *a == action) {
+                display.ungrab(&bound[pos].1);
+                bound.remove(pos);
+            }
+            let ok = match combo {
+                None => true,
+                Some(combo) => {
+                    let ok = display.grab(&combo);
+                    if ok {
+                        bound.push((action, combo));
+                    }
+                    ok
+                }
+            };
+            answers.push((action, ok));
+        }
+        return answers;
+    }
     let fallback = |b: &[(Action, Option<Combo>)]| b.iter().map(|(a, c)| (*a, c.is_none())).collect::<Vec<_>>();
     let Some(requests) = REQUESTS.get() else { return fallback(&bindings) };
     let (tx, rx) = std::sync::mpsc::channel();
