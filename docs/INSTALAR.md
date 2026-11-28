@@ -68,7 +68,7 @@ A extensão fica em `/usr/lib/SigilVault/extension/`. O pacote já registra o co
 
 Depois, fixe o ícone, clique nele e siga o pareamento: o app mostra um código de 8 caracteres e você o digita na extensão.
 
-> **Firefox e Chromium em snap** (o padrão do Ubuntu) rodam isolados e podem não conseguir abrir o conector. Se o pareamento falhar, use o Firefox em `.deb` (repositório da Mozilla) ou o Chrome/Brave em `.deb`.
+> **Navegadores em snap** (Brave, Chromium e Firefox do Ubuntu) rodam isolados: não leem os manifestos do sistema nem executam o conector, e a extensão mostra "O conector do SigilVault não foi encontrado". Use o navegador em `.deb`: Google Chrome (baixe o `.deb` em google.com/chrome), Brave (repositório oficial em brave.com/linux) ou Firefox da Mozilla (repositório `packages.mozilla.org`).
 
 ### 3. Uso no dia a dia
 
@@ -155,7 +155,7 @@ The extension lives in `/usr/lib/SigilVault/extension/`. The package already reg
 
 Then pin the icon, click it and follow the pairing: the app shows an 8-character code and you type it into the extension.
 
-> **Firefox and Chromium as snaps** (Ubuntu's default) run isolated and may be unable to start the connector. If pairing fails, use Firefox as a `.deb` (Mozilla's repository) or Chrome/Brave as a `.deb`.
+> **Browsers as snaps** (Ubuntu's Brave, Chromium and Firefox) run isolated: they do not read the system manifests nor run the connector, and the extension shows "SigilVault connector not found". Use the browser as a `.deb`: Google Chrome (download the `.deb` from google.com/chrome), Brave (official repository at brave.com/linux) or Mozilla's Firefox (`packages.mozilla.org` repository).
 
 ### 3. Everyday use
 
