@@ -1,7 +1,7 @@
-//! Programa em primeiro plano (alvo do Auto-Type). A descoberta da janela ativa ainda não existe
-//! no Linux (`foreground` devolve `None`); o resto da API já funciona sobre o caminho do executável.
-//! Foreground program (Auto-Type target). Finding the active window does not exist on Linux yet
-//! (`foreground` returns `None`); the rest of the API already works on the executable path.
+//! Programa em primeiro plano (alvo do Auto-Type). No Linux ele vem do último elemento que ganhou
+//! o foco, avisado pela acessibilidade (AT-SPI); funciona igual no Wayland e no X11.
+//! Foreground program (Auto-Type target). On Linux it comes from the last element that got focus,
+//! reported by accessibility (AT-SPI); it works the same on Wayland and X11.
 
 use std::os::unix::fs::MetadataExt;
 use std::path::PathBuf;
@@ -25,9 +25,12 @@ pub struct Target {
     pub title: String,
 }
 
-/// Janela em primeiro plano agora. Ainda não implementado no Linux. / Current foreground window. Not implemented on Linux yet.
+/// O programa que tinha o foco por último (nunca o próprio SigilVault). Sem acessibilidade
+/// ligada, ou antes do primeiro foco, não há resposta. / The program that had focus last (never
+/// SigilVault itself). Without accessibility on, or before the first focus, there is no answer.
 pub fn foreground() -> Option<Target> {
-    None
+    super::atspi::start();
+    super::atspi::last_focus().map(|f| Target { hwnd: usize::try_from(f.token).unwrap_or(0), pid: f.pid, exe: f.exe, title: f.app_name })
 }
 
 impl Target {
@@ -60,9 +63,9 @@ impl Target {
         std::fs::read_link(format!("/proc/{}/exe", self.pid)).is_ok_and(|p| p == self.exe)
     }
 
-    /// A mesma janela continua em primeiro plano? Ainda não implementado no Linux. / Is the same window still in the foreground? Not implemented on Linux yet.
+    /// O mesmo programa continua com o foco? / Does the same program still have focus?
     pub fn still_foreground(&self) -> bool {
-        false
+        super::atspi::last_focus().is_some_and(|f| f.pid == self.pid)
     }
 }
 
