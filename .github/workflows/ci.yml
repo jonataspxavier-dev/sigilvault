@@ -1,0 +1,73 @@
+# Integração contínua: roda os testes a cada push e pull request.
+# Continuous integration: runs the tests on every push and pull request.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Windows é a plataforma principal: tudo é compilado e testado aqui.
+  # Windows is the main platform: everything is built and tested here.
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - name: Rust (testes do workspace inteiro / whole workspace tests)
+        run: cargo test --workspace
+      - name: Interface do app / App UI
+        working-directory: app
+        run: |
+          npm ci
+          npm test
+          npm run build
+      # O build vem antes: o teste do pareamento usa o .wasm que ele gera.
+      # Build comes first: the pairing test uses the .wasm it produces.
+      - name: Extensão / Extension
+        working-directory: extension
+        run: |
+          npm ci
+          npm run build
+          npm test
+
+  # Linux: por enquanto só os pacotes que já compilam por lá. O app Tauri entra na etapa 1 do porte.
+  # Linux: for now only the packages that already build there. The Tauri app joins in step 1 of the port.
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - name: Rust (pacotes portáteis / portable packages)
+        run: cargo test -p sigilvault-core -p sigilvault-pairing -p sigilvault-locked -p sigilvault-ipc -p sigilvault-host
+      - name: Interface do app / App UI
+        working-directory: app
+        run: |
+          npm ci
+          npm test
+          npm run build
+      - name: Extensão / Extension
+        working-directory: extension
+        run: |
+          npm ci
+          npm run build
+          npm test
