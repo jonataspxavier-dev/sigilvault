@@ -82,5 +82,37 @@ pub fn exclude_from_error_reporting() {
     unsafe { libc::setrlimit(libc::RLIMIT_CORE, &zero) };
 }
 
-/// Só existe para o WebView2 do Windows. / Only exists for Windows' WebView2.
-pub fn harden_webview_env() {}
+/// Em máquinas com placa NVIDIA (driver proprietário), o WebKitGTK tem um problema conhecido no
+/// renderizador `DMABUF`: a janela pode travar ou crescer a memória sem limite (já vimos o processo
+/// da janela chegar a 5,6 GB e abortar). Nesses casos desliga esse renderizador; o desenho fica um
+/// pouco menos acelerado, mas estável. Quem já definiu a variável mantém a escolha.
+/// On machines with an NVIDIA card (proprietary driver), WebKitGTK has a known problem in the
+/// `DMABUF` renderer: the window may hang or grow memory without limit (we have seen the window's
+/// process reach 5.6 GB and abort). In those cases it turns that renderer off; drawing is a bit
+/// less accelerated, but stable. Whoever already set the variable keeps their choice.
+pub fn harden_webview_env() {
+    if needs_dmabuf_workaround(std::path::Path::new("/proc/driver/nvidia").is_dir(), std::env::var_os("WEBKIT_DISABLE_DMABUF_RENDERER").is_some()) {
+        // SAFETY: chamado no início de `run()`, antes de o app criar outras threads; ninguém mais lê o
+        // ambiente nesse momento. / Called at the start of `run()`, before the app creates other threads;
+        // nobody else reads the environment at that moment.
+        unsafe { std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1") };
+    }
+}
+
+/// Decide se aplica o contorno: há placa NVIDIA e a pessoa não escolheu nada. / Decides whether to apply the workaround: there is an NVIDIA card and the person chose nothing.
+fn needs_dmabuf_workaround(nvidia_driver: bool, already_set: bool) -> bool {
+    nvidia_driver && !already_set
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn workaround_only_with_nvidia_and_no_user_choice() {
+        assert!(needs_dmabuf_workaround(true, false));
+        assert!(!needs_dmabuf_workaround(true, true));
+        assert!(!needs_dmabuf_workaround(false, false));
+        assert!(!needs_dmabuf_workaround(false, true));
+    }
+}
