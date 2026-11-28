@@ -81,7 +81,7 @@ Depois, fixe o ícone, clique nele e siga o pareamento: o app mostra um código 
 ### 3. Uso no dia a dia
 
 - **Atalhos:** no Wayland, o atalho passa pelo seu desktop, que pede permissão na primeira vez (GNOME 48 ou mais novo, KDE). Se o seu desktop não oferecer isso, crie um atalho do sistema que rode `sigilvault-app --quick search` (busca) e `sigilvault-app --quick generate` (gerar senha).
-- **Programas do computador:** ao clicar num campo de senha de outro programa, aparece uma notificação "Abrir o SigilVault aqui". O texto é escrito no campo pela acessibilidade do sistema, então o programa precisa expor o campo (programas GTK e Qt expõem). Se não der, use **Copiar**.
+- **Programas do computador:** ao clicar num campo de senha de outro programa, aparece uma notificação "Abrir o SigilVault aqui". O texto é escrito no campo pela acessibilidade do sistema, então o programa precisa expor o campo (programas GTK e Qt expõem). Se não der, use **Copiar**. Depois de entrar, quando a janela de login fecha, o SigilVault oferece **"Guardar este login?"** (ele nunca lê o que você digita). Se um programa incomodar com avisos, use "Não mostrar neste programa" na notificação.
 - **Bloqueio:** o cofre bloqueia por inatividade, ao travar a tela, ao suspender e ao sair da conta.
 - **Chaveiro:** a chave que protege os arquivos de apoio (pareamentos, contador de versão) fica no chaveiro do sistema (GNOME Keyring, KWallet). Sem chaveiro, ela fica num arquivo só seu na pasta de dados, o que protege menos.
 - **Bandeja no GNOME:** o GNOME não mostra ícones de bandeja sozinho. Instale a extensão **AppIndicator** (`gnome-shell-extension-appindicator`). Sem ela o app funciona, mas sem o ícone.
@@ -90,7 +90,6 @@ Depois, fixe o ícone, clique nele e siga o pareamento: o app mostra um código 
 
 ### O que o Linux ainda não tem
 
-- O aviso "Guardar este login?" depois de entrar num programa.
 - O selo desenhado dentro do campo (no Linux é uma notificação).
 - Digitar teclas em programas que não expõem o campo pela acessibilidade.
 - Flatpak.
@@ -176,7 +175,7 @@ Then pin the icon, click it and follow the pairing: the app shows an 8-character
 ### 3. Everyday use
 
 - **Hotkeys:** on Wayland the hotkey goes through your desktop, which asks for permission the first time (GNOME 48 or newer, KDE). If your desktop does not offer that, create a system shortcut that runs `sigilvault-app --quick search` (search) and `sigilvault-app --quick generate` (generate a password).
-- **Desktop programs:** when you click another program's password field, a notification "Open SigilVault here" appears. The text is written into the field through the system's accessibility, so the program must expose the field (GTK and Qt programs do). If it cannot, use **Copy**.
+- **Desktop programs:** when you click another program's password field, a notification "Open SigilVault here" appears. The text is written into the field through the system's accessibility, so the program must expose the field (GTK and Qt programs do). If it cannot, use **Copy**. After you sign in, when the login window closes, SigilVault offers **"Keep this login?"** (it never reads what you type). If a program gets noisy with notices, use "Do not show in this program" on the notification.
 - **Locking:** the vault locks on inactivity, when the screen locks, on sleep and on sign-out.
 - **Keyring:** the key protecting the support files (pairings, version counter) lives in the system keyring (GNOME Keyring, KWallet). Without a keyring, it lives in a file only you can read in the data folder, which protects less.
 - **Tray on GNOME:** GNOME does not show tray icons by itself. Install the **AppIndicator** extension (`gnome-shell-extension-appindicator`). Without it the app works, just without the icon.
@@ -185,7 +184,6 @@ Then pin the icon, click it and follow the pairing: the app shows an 8-character
 
 ### What Linux does not have yet
 
-- The "Keep this login?" notice after signing in to a program.
 - The seal drawn inside the field (on Linux it is a notification).
 - Typing keys into programs that do not expose the field through accessibility.
 - Flatpak.

@@ -220,3 +220,21 @@ pub fn next_sibling(el: &Element) -> Option<Element> {
         (path.as_str() != "/org/a11y/atspi/null").then_some(Element { bus, path })
     })
 }
+
+/// Estado "visível" (`SHOWING`) do AT-SPI: bit 25 da primeira palavra. / AT-SPI's `SHOWING` state: bit 25 of the first word.
+const STATE_SHOWING: u32 = 1 << 25;
+
+/// O elemento ainda existe e está visível? `Some(false)` = sumiu ou foi escondido (o programa fechou
+/// a janela ou morreu); `None` = não deu para saber (o programa não respondeu a tempo).
+/// Does the element still exist and is it visible? `Some(false)` = gone or hidden (the program closed
+/// the window or died); `None` = could not tell (the program did not answer in time).
+pub async fn showing(el: &Element) -> Option<bool> {
+    let conn = CONN.get()?;
+    let fut = conn.call_method(Some(el.bus.as_str()), &el.path, Some(ACCESSIBLE), "GetState", &());
+    match tokio::time::timeout(CALL_TIMEOUT, fut).await {
+        Err(_) => None,
+        // Resposta de erro: o objeto ou o programa não existe mais. / Error reply: the object or the program no longer exists.
+        Ok(Err(_)) => Some(false),
+        Ok(Ok(reply)) => reply.body().deserialize::<Vec<u32>>().ok().map(|words| words.first().is_some_and(|w| w & STATE_SHOWING != 0)),
+    }
+}
