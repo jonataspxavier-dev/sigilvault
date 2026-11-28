@@ -14,7 +14,7 @@ Princípios do projeto:
 - **Senhas fortes como hábito.** Toda senha nova, no navegador ou no desktop, nasce do gerador.
 - **Identidade própria.** Nome, ícones e visual 100% originais.
 
-Primeira plataforma: Windows 10 e 11. Linux e macOS ficam para depois. O repositório começa privado no GitHub e os commits ficam somente no nome do autor do projeto (sem coautoria).
+Primeira plataforma: Windows 10 e 11. Linux e macOS ficam para depois. O repositório começou privado e hoje é público no GitHub, e os commits ficam somente no nome do autor do projeto (sem coautoria).
 
 Idiomas: a interface do app e da extensão é bilíngue (português e inglês), com troca de idioma nas configurações. Commits e comentários do código também são bilíngues.
 
@@ -140,7 +140,7 @@ O SigilVault faz quatro coisas: preenche logins conhecidos, ajuda a criar contas
 - **Atalho global de busca** (ex.: `Ctrl+Shift+Espaço`): abre um pop-up rápido para buscar uma conta, copiar ou digitar a senha.
 - **Atalho de gerar** (ex.: `Ctrl+Shift+G`): abre o mesmo balão "gerar ou só salvar", digita no campo ativo e oferece salvar com o nome do programa.
 - **Auto-Type:** o app reconhece a janela ativa (título e processo), sugere a credencial certa e digita usuário + Tab + senha.
-- **Fase posterior:** o balão aparecer sozinho ao clicar num campo de senha de outro programa, via UI Automation do Windows. É a parte mais difícil do projeto.
+- **Selo nos campos de senha de outros programas (pronto na versão 0.1.2):** o selo aparece sozinho no campo de senha de outro programa, via UI Automation do Windows, e o clique preenche ou salva. Foi a parte mais difícil do projeto.
 
 ### Gerador de senhas
 
@@ -163,7 +163,7 @@ O SigilVault faz quatro coisas: preenche logins conhecidos, ajuda a criar contas
 O visual do SigilVault segue um estilo de fantasia medieval nórdica, inspirado na atmosfera de Skyrim: pedra, ferro forjado, couro, cera de selo e runas. Tudo é desenhado por nós. É uma inspiração de clima, sem copiar nada do jogo, para o app ter cara própria e evitar problemas de direitos.
 
 - **Nome:** SigilVault. *Sigil* = selo ou sinete (do latim *sigillum*, mesma origem de "sigilo"). *Vault* = cofre.
-- **Ícone principal (logo):** um baú-cofre de ferro forjado com reforços rebitados, uma fechadura ornamentada no centro e um selo de cera com o "S" do SigilVault lacrando a tampa. Mistura de cofre, fechadura e selo.
+- **Ícone principal (logo):** o dragão guardião do baú, desenhado por nós: um dragão pousado sobre o baú-cofre de ferro forjado, com contorno dourado nos tamanhos pequenos. Ele também aparece como emblema na tela de desbloqueio, como selo nos campos de senha de outros programas e na animação "o dragão desperta" ao desbloquear. A ideia original (baú com fechadura e selo de cera com o "S") ficou como inspiração.
 - **Clima visual:**
   - cores: cinza-pedra e ferro escuro, couro marrom, vermelho-cera nos selos e um dourado envelhecido como destaque
   - texturas leves de pedra, pergaminho e metal escovado, sem pesar a interface
@@ -175,7 +175,7 @@ O visual do SigilVault segue um estilo de fantasia medieval nórdica, inspirado 
   - ícone dentro dos campos de login: um pequeno selo
   - ações: gerar (runa ou pena), salvar (selo de cera), copiar (pergaminho duplo), ver/ocultar (olho ornamentado), editar, excluir, buscar (lupa de latão), bloquear (cadeado de ferro), exportar e importar (baú com seta)
   - tipos de item: login (chave antiga), nota segura (pergaminho), app desktop (escudo)
-- **Limites da referência ao jogo:** nada de logo, símbolo do dragão, fontes, runas, imagens ou nomes do Skyrim. A Bethesda é dona dessa marca; o SigilVault só compartilha o clima medieval.
+- **Limites da referência ao jogo:** nada de logo, imagens, fontes, runas ou nomes do Skyrim, e nada do emblema oficial do jogo (o dragão do Skyrim). A Bethesda é dona dessa marca; o SigilVault só compartilha o clima medieval. O dragão guardião do SigilVault é um desenho original nosso, com pose, traço e contexto próprios (guardando o baú), e nunca deve ser alterado para se parecer com o emblema do jogo.
 - **Legibilidade em primeiro lugar:** o tema é decoração; senhas, campos e botões continuam claros, com bom contraste. Os ícones precisam ser reconhecíveis mesmo a 16 px.
 - **Tamanhos:** 16, 32, 48 e 128 px para a extensão; arquivo `.ico` com vários tamanhos para o Windows.
 - **Próximo passo:** esboçar 2 ou 3 versões do logo e uma folha com todos os ícones lado a lado para conferir a consistência.
@@ -279,7 +279,7 @@ O Build Tools é grande (alguns GB) e pode pedir reinicialização.
 
 ### Regras do repositório
 
-- Repositório **privado** `sigilvault` no GitHub do autor.
+- Repositório `sigilvault` no GitHub do autor (começou privado e hoje é **público**: por isso nada de segredo ou dado real entra nele).
 - Commits **só no nome do autor**, sem linha de coautoria (desativar nas configurações do Claude Code do projeto).
 - Tudo bilíngue (português e inglês): mensagens de commit no formato "pt-BR / en" e comentários do código nas duas línguas, português primeiro. Commits pequenos, pensando no estudo do autor.
 - Nunca subir senhas, chaves ou arquivos de cofre reais (o `.gitignore` bloqueia `*.sigil`).
