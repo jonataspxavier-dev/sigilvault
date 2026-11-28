@@ -42,9 +42,27 @@ fn create_save_open_roundtrip() {
     assert_eq!(&*v.reveal_notes(note).unwrap().unwrap(), "rede: Casa / senha: 12345");
 }
 
+/// Dá para travar memória aqui? No Windows sempre; no Linux só se o limite `RLIMIT_MEMLOCK` deixar
+/// (em alguns contêineres é zero). / Can memory be locked here? Always on Windows; on Linux only if
+/// the `RLIMIT_MEMLOCK` limit allows it (zero in some containers).
+fn memory_lock_available() -> bool {
+    if cfg!(windows) {
+        return true;
+    }
+    let Ok(limits) = std::fs::read_to_string("/proc/self/limits") else { return false };
+    let Some(line) = limits.lines().find(|l| l.starts_with("Max locked memory")) else { return false };
+    match line.split_whitespace().nth(3) {
+        Some("unlimited") => true,
+        Some(bytes) => bytes.parse::<u64>().is_ok_and(|b| b >= 1024 * 1024),
+        None => false,
+    }
+}
+
 #[test]
-#[cfg(windows)]
 fn keys_stay_in_locked_memory() {
+    if !memory_lock_available() {
+        return;
+    }
     let (bytes, codes) = sample_vault();
     // Aberto com a senha, com código (que troca as chaves) e depois de trocar a senha.
     // Opened with the password, with a code (which rotates the keys) and after changing the password.

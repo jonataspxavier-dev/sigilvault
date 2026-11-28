@@ -222,6 +222,18 @@ mod tests {
         assert_eq!(unprotect(&a).unwrap(), b"{\"v\":7}");
     }
 
+    /// Fala com o chaveiro de verdade (Secret Service): rode com `cargo test -- --ignored`. Cria a
+    /// entrada "SigilVault" no chaveiro do usuário, se ainda não houver.
+    /// Talks to the real keyring (Secret Service): run with `cargo test -- --ignored`. Creates the
+    /// "SigilVault" entry in the user's keyring, if there is none yet.
+    #[test]
+    #[ignore = "usa o chaveiro do usuário / uses the user's keyring"]
+    fn keyring_key_is_created_once_and_reused() {
+        let first = keyring_key().expect("sem Secret Service / no Secret Service");
+        let second = keyring_key().unwrap();
+        assert_eq!(*first, *second);
+    }
+
     #[test]
     fn file_key_is_created_private_and_stable() {
         let dir = std::env::temp_dir().join(format!("sigilvault-test-filekey-{}", std::process::id()));

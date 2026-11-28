@@ -886,7 +886,12 @@ fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
     tmp_name.push(".tmp");
     let tmp = path.with_file_name(tmp_name);
     let result = (|| {
-        let mut f = OpenOptions::new().write(true).create(true).truncate(true).open(&tmp)?;
+        let mut options = OpenOptions::new();
+        options.write(true).create(true).truncate(true);
+        // No Linux, o cofre nasce só do dono (`0600`). / On Linux, the vault is born owner-only (`0600`).
+        #[cfg(unix)]
+        std::os::unix::fs::OpenOptionsExt::mode(&mut options, 0o600);
+        let mut f = options.open(&tmp)?;
         f.write_all(bytes)?;
         // sync_all = FlushFileBuffers no Windows. / sync_all = FlushFileBuffers on Windows.
         f.sync_all()?;

@@ -34,6 +34,11 @@ windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_Syste
 
 [target."cfg(unix)".dependencies]
 libc = "0.2"
+# Área de transferência (a mesma versão que o Tauri já usa). / Clipboard (the same version Tauri already uses).
+gtk = "0.18.2"
 # Chaveiro do sistema (Secret Service) para a chave do dispositivo. / System keyring (Secret Service) for the device key.
 oo7 = "0.7.3"
-tokio = { version = "1", features = ["rt"] }
+tokio = { version = "1", features = ["rt", "macros", "time"] }
+# D-Bus: logind (bloqueio da sessão) e protetor de tela. / D-Bus: logind (session lock) and screensaver.
+zbus = { version = "5.19", default-features = false, features = ["tokio"] }
+futures-util = { version = "0.3", default-features = false }
