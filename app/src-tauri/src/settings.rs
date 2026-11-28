@@ -119,7 +119,7 @@ impl Settings {
             if value.trim().is_empty() {
                 value.clear();
             } else {
-                *value = crate::win::hotkeys::parse(value).map(crate::win::hotkeys::format).unwrap_or(default);
+                *value = crate::platform::hotkeys::parse(value).map(crate::platform::hotkeys::format).unwrap_or(default);
             }
         }
         // Programas ignorados: caminho normalizado, sem repetição, com limite.

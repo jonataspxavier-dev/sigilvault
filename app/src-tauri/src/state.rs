@@ -12,7 +12,7 @@ use crate::attempts::Attempts;
 use crate::rollback::{Codec, RevisionGuard};
 use crate::settings::Settings;
 use crate::storage::{Paths, atomic_write};
-use crate::{bridge, tray, win, window};
+use crate::{bridge, platform, tray, window};
 
 /// Índice local do perfil: só o nome, para a tela de login. Nunca vai para exportações.
 /// Local profile index: only the name, for the login screen. Never goes into exports.
@@ -46,7 +46,7 @@ pub struct Inner {
     pub attempts: Attempts,
     pub guard: RevisionGuard,
     /// Marca da última senha copiada, para limpar depois. / Mark of the last copied password, to clear later.
-    pub clipboard: Option<win::clipboard::Copied>,
+    pub clipboard: Option<platform::clipboard::Copied>,
     /// Impressão (SHA-256) do arquivo do cofre como lido/gravado, para detectar conflitos.
     /// Fingerprint (SHA-256) of the vault file as read/written, to detect conflicts.
     pub disk_hash: Option<[u8; 32]>,
@@ -69,7 +69,7 @@ impl AppState {
             vault: None,
             settings: Settings::load(&paths.settings),
             attempts: Attempts::load(&paths.attempts, Instant::now()),
-            guard: RevisionGuard::load(&paths.revision_guard, Codec::DPAPI),
+            guard: RevisionGuard::load(&paths.revision_guard, Codec::PLATFORM),
             clipboard: None,
             disk_hash: None,
             backed_up_this_session: false,
@@ -113,7 +113,7 @@ pub fn lock_app(app: &AppHandle, reopen: bool) {
         inner.disk_hash = None;
         inner.last_import = None;
         if let Some(copied) = inner.clipboard.take() {
-            win::clipboard::clear_if_ours(win::watcher::hwnd(), &copied);
+            platform::clipboard::clear_if_ours(&copied);
         }
     }
     announce_lock_state(app, true);

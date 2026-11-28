@@ -844,9 +844,23 @@ impl Vault {
     }
 }
 
-/// Caminho de executável para comparar: minúsculas e barras invertidas. / Executable path for comparing.
+/// Caminho de executável para comparar. Caminho de Windows (`C:\...` ou com barras invertidas) é
+/// comparado sem diferenciar maiúsculas e com barras normalizadas; caminho do Linux é comparado
+/// exatamente, porque lá maiúsculas e minúsculas são arquivos diferentes. Quem decide é o formato
+/// do caminho, não o sistema onde o app roda: um cofre levado de um sistema para o outro continua
+/// se comportando do mesmo jeito.
+/// Executable path to compare. A Windows path (`C:\...` or with backslashes) is compared
+/// case-insensitively with normalized slashes; a Linux path is compared exactly, because there
+/// upper and lower case are different files. The path's format decides, not the system the app
+/// runs on: a vault carried from one system to the other keeps behaving the same way.
 pub fn normalize_path(path: &str) -> String {
-    path.trim().replace('/', "\\").to_lowercase()
+    let path = path.trim();
+    let drive = path.as_bytes().get(1) == Some(&b':') && path.as_bytes().first().is_some_and(u8::is_ascii_alphabetic);
+    if drive || path.contains('\\') {
+        path.replace('/', "\\").to_lowercase()
+    } else {
+        path.to_owned()
+    }
 }
 
 /// Guarda uma senha antiga, mantendo só as [`MAX_HISTORY`] mais novas.
@@ -890,6 +904,15 @@ fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn windows_paths_ignore_case_and_slashes_but_linux_paths_do_not() {
+        assert_eq!(normalize_path(" C:/Jogos/Game.EXE "), r"c:\jogos\game.exe");
+        assert_eq!(normalize_path(r"\\srv\Share\App.exe"), r"\\srv\share\app.exe");
+        assert_eq!(normalize_path("/usr/bin/Firefox"), "/usr/bin/Firefox");
+        assert_ne!(normalize_path("/usr/bin/App"), normalize_path("/usr/bin/app"));
+        assert_eq!(normalize_path(""), "");
+    }
 
     const PW: &str = "cavalo-trilho-nuvem-sete-farol-mesa";
 

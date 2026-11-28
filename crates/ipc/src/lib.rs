@@ -5,8 +5,8 @@
 //!
 //! - [`frame`]: mensagens com 4 bytes de tamanho + conteúdo (mesmo formato do Native Messaging).
 //!   Messages with a 4-byte length + content (same format as Native Messaging).
-//! - [`pipe`]: named pipe só do usuário atual, que não pode ser "sequestrado".
-//!   Named pipe for the current user only, which cannot be "hijacked".
+//! - [`pipe`]: named pipe (Windows) ou socket Unix (Linux) só do usuário atual, que não pode ser "sequestrado".
+//!   Named pipe (Windows) or Unix socket (Linux) for the current user only, which cannot be "hijacked".
 //! - [`process`] e [`signature`]: quem está do outro lado (caminho do executável e Authenticode).
 //!   Who is on the other side (executable path and Authenticode).
 
@@ -25,10 +25,31 @@ pub mod signature;
 #[cfg(windows)]
 mod user;
 
+#[cfg(unix)]
+#[path = "unix/pipe.rs"]
+pub mod pipe;
+#[cfg(unix)]
+#[path = "unix/process.rs"]
+pub mod process;
+#[cfg(unix)]
+#[path = "unix/protected.rs"]
+pub mod protected;
+#[cfg(unix)]
+#[path = "unix/signature.rs"]
+pub mod signature;
+
 /// Nome do executável do host. / Host executable name.
+#[cfg(windows)]
 pub const HOST_EXE: &str = "sigilvault-host.exe";
+/// Nome do executável do host. / Host executable name.
+#[cfg(not(windows))]
+pub const HOST_EXE: &str = "sigilvault-host";
 /// Nome do executável do app. / App executable name.
+#[cfg(windows)]
 pub const APP_EXE: &str = "sigilvault-app.exe";
+/// Nome do executável do app. / App executable name.
+#[cfg(not(windows))]
+pub const APP_EXE: &str = "sigilvault-app";
 /// Nome do host registrado nos navegadores. / Host name registered in the browsers.
 pub const HOST_NAME: &str = "app.sigilvault.host";
 

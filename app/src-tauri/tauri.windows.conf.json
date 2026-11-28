@@ -1,0 +1,22 @@
+{
+  "bundle": {
+    "targets": [
+      "nsis"
+    ],
+    "resources": {
+      "native-messaging/app.sigilvault.host.chromium.json": "app.sigilvault.host.chromium.json",
+      "native-messaging/app.sigilvault.host.firefox.json": "app.sigilvault.host.firefox.json"
+    },
+    "windows": {
+      "nsis": {
+        "installMode": "perMachine",
+        "installerHooks": "installer/hooks.nsh",
+        "languages": [
+          "PortugueseBR",
+          "English"
+        ],
+        "displayLanguageSelector": true
+      }
+    }
+  }
+}

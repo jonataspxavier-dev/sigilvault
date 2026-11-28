@@ -135,10 +135,19 @@ pub fn is_cloud_folder(path: &Path) -> bool {
     let from_env = ["OneDrive", "OneDriveConsumer", "OneDriveCommercial"].iter().any(|var| {
         std::env::var_os(var).is_some_and(|v| !v.is_empty() && lower.starts_with(&v.to_string_lossy().to_lowercase()))
     });
+    // `google-drive:host=…` é como o GNOME monta uma conta online. / `google-drive:host=…` is how GNOME mounts an online account.
     from_env
         || path.components().any(|c| {
             let name = c.as_os_str().to_string_lossy().to_lowercase();
-            name.starts_with("onedrive") || name == "dropbox" || name == "google drive" || name == "icloud drive" || name == "icloudrive"
+            name.starts_with("onedrive")
+                || name.starts_with("dropbox")
+                || name == "google drive"
+                || name == "googledrive"
+                || name.starts_with("google-drive")
+                || name == "icloud drive"
+                || name == "icloudrive"
+                || name == "nextcloud"
+                || name == "owncloud"
         })
 }
 
@@ -146,6 +155,9 @@ pub fn is_cloud_folder(path: &Path) -> bool {
 mod tests {
     use super::*;
 
+    // Caminhos do Windows só fazem sentido no Windows (no Linux, `\` não separa pastas).
+    // Windows paths only make sense on Windows (on Linux, `\` does not separate folders).
+    #[cfg(windows)]
     #[test]
     fn detects_cloud_folders() {
         assert!(is_cloud_folder(Path::new(r"C:\Users\ana\OneDrive\Documentos\senhas.csv")));
@@ -154,5 +166,15 @@ mod tests {
         assert!(is_cloud_folder(Path::new(r"G:\Google Drive\x.csv")));
         assert!(!is_cloud_folder(Path::new(r"C:\Users\ana\Desktop\x.csv")));
         assert!(!is_cloud_folder(Path::new(r"E:\pendrive\x.csv")));
+    }
+
+    #[test]
+    fn detects_cloud_folders_on_linux() {
+        assert!(is_cloud_folder(Path::new("/home/ana/Dropbox/x.csv")));
+        assert!(is_cloud_folder(Path::new("/home/ana/OneDrive/x.csv")));
+        assert!(is_cloud_folder(Path::new("/home/ana/Nextcloud/docs/x.csv")));
+        assert!(is_cloud_folder(Path::new("/run/user/1000/gvfs/google-drive:host=gmail.com/x.csv")));
+        assert!(!is_cloud_folder(Path::new("/home/ana/Documentos/x.csv")));
+        assert!(!is_cloud_folder(Path::new("/media/ana/pendrive/x.csv")));
     }
 }

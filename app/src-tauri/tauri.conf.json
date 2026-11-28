@@ -46,36 +46,21 @@
   },
   "bundle": {
     "active": true,
-    "targets": [
-      "nsis"
-    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
+      "icons/icon.png",
       "icons/icon.ico"
     ],
     "externalBin": [
       "binaries/sigilvault-host"
     ],
     "resources": {
-      "native-messaging/app.sigilvault.host.chromium.json": "app.sigilvault.host.chromium.json",
-      "native-messaging/app.sigilvault.host.firefox.json": "app.sigilvault.host.firefox.json",
       "../../extension/dist/chromium/": "extension/chromium/",
       "../../extension/dist/firefox/": "extension/firefox/"
     },
     "publisher": "SigilVault",
-    "shortDescription": "Gerenciador de senhas local / Local password manager",
-    "windows": {
-      "nsis": {
-        "installMode": "perMachine",
-        "installerHooks": "installer/hooks.nsh",
-        "languages": [
-          "PortugueseBR",
-          "English"
-        ],
-        "displayLanguageSelector": true
-      }
-    }
+    "shortDescription": "Gerenciador de senhas local / Local password manager"
   }
 }

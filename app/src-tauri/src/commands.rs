@@ -14,7 +14,7 @@ use crate::rollback::Check;
 use crate::settings::{GeneratorPrefs, Settings};
 use crate::state::{AppState, Inner, Profile, announce_lock_state, lock_app};
 use crate::storage::{atomic_write, sha256};
-use crate::{backups, tray, win};
+use crate::{backups, platform, tray};
 
 // Lista de comandos (mesma do `build.rs`). / Command list (same as `build.rs`).
 include!("command_list.rs");
@@ -497,7 +497,7 @@ pub fn reveal_notes(state: State<'_, AppState>, id: String) -> CmdResult<Option<
 /// Copia com proteção e agenda a limpeza. Devolve os segundos até limpar.
 /// Copies with protection and schedules clearing. Returns seconds until clearing.
 fn copy_protected(app: &AppHandle, inner: &mut Inner, text: &str) -> CmdResult<u32> {
-    let copied = win::clipboard::set_secret_text(win::watcher::hwnd(), text).map_err(|_| CmdError::new("clipboard"))?;
+    let copied = platform::clipboard::set_secret_text(text).map_err(|_| CmdError::new("clipboard"))?;
     inner.clipboard = Some(copied.clone());
     let secs = inner.settings.clipboard_clear_secs;
     let app = app.clone();
@@ -508,7 +508,7 @@ fn copy_protected(app: &AppHandle, inner: &mut Inner, text: &str) -> CmdResult<u
         // Só limpa se esta ainda for a cópia mais recente. / Only clears if this is still the latest copy.
         if inner.clipboard.as_ref() == Some(&copied) {
             inner.clipboard = None;
-            win::clipboard::clear_if_ours(win::watcher::hwnd(), &copied);
+            platform::clipboard::clear_if_ours(&copied);
         }
     });
     Ok(secs)

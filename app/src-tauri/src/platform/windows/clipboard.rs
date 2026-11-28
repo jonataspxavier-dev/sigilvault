@@ -91,7 +91,9 @@ fn fingerprint(salt: &[u8; 16], utf16_le: &[u8]) -> [u8; 32] {
 /// sincronizar. Devolve a marca da cópia, usada para limpar depois.
 /// Copies a secret with the formats that ask Windows not to keep it in history nor sync it.
 /// Returns the copy mark, used for clearing later.
-pub fn set_secret_text(owner: HWND, text: &str) -> Result<Copied, ()> {
+pub fn set_secret_text(text: &str) -> Result<Copied, ()> {
+    // A janela escondida do vigia é a dona da cópia. / The watcher's hidden window owns the copy.
+    let owner: HWND = super::watcher::hwnd();
     let utf16: Zeroizing<Vec<u16>> = Zeroizing::new(wide(text));
     let bytes: Zeroizing<Vec<u8>> = Zeroizing::new(utf16.iter().flat_map(|c| c.to_le_bytes()).collect());
     let salt: [u8; 16] = sigilvault_core::crypto::random_array().map_err(|_| ())?;
@@ -122,7 +124,8 @@ pub fn set_secret_text(owner: HWND, text: &str) -> Result<Copied, ()> {
 /// Clears the clipboard only if it still holds our password: same sequence or same content
 /// (some programs rewrite the text and change the sequence). Before emptying, overwrites the
 /// copy with zeros.
-pub fn clear_if_ours(owner: HWND, copied: &Copied) -> bool {
+pub fn clear_if_ours(copied: &Copied) -> bool {
+    let owner: HWND = super::watcher::hwnd();
     let Some(_guard) = OpenGuard::open(owner) else { return false };
     // SAFETY: a área de transferência está aberta; o bloco devolvido é travado, lido e zerado
     // dentro do tamanho informado por GlobalSize, e destravado antes de esvaziar.
@@ -160,26 +163,25 @@ mod tests {
     #[test]
     #[ignore = "sobrescreve a área de transferência / overwrites the clipboard"]
     fn copy_then_clear_even_if_rewritten() {
-        crate::win::watcher::start(|| {});
-        while crate::win::watcher::hwnd().is_null() {
+        crate::platform::watcher::start(|| {});
+        while crate::platform::watcher::hwnd().is_null() {
             std::thread::sleep(std::time::Duration::from_millis(10));
         }
-        let owner = crate::win::watcher::hwnd();
 
         // Caso simples: ninguém mexeu. / Simple case: nobody touched it.
-        let copied = set_secret_text(owner, "senha-de-teste-1").unwrap();
-        assert!(clear_if_ours(owner, &copied));
+        let copied = set_secret_text("senha-de-teste-1").unwrap();
+        assert!(clear_if_ours(&copied));
 
         // Outro programa regravou o mesmo texto (sequência mudou): ainda limpa.
         // Another program rewrote the same text (sequence changed): still clears.
-        let copied = set_secret_text(owner, "senha-de-teste-2").unwrap();
-        set_secret_text(owner, "senha-de-teste-2").unwrap();
-        assert!(clear_if_ours(owner, &copied));
+        let copied = set_secret_text("senha-de-teste-2").unwrap();
+        set_secret_text("senha-de-teste-2").unwrap();
+        assert!(clear_if_ours(&copied));
 
         // O usuário copiou outra coisa: não pode apagar.
         // The user copied something else: must not clear.
-        let copied = set_secret_text(owner, "senha-de-teste-3").unwrap();
-        set_secret_text(owner, "texto do usuário").unwrap();
-        assert!(!clear_if_ours(owner, &copied));
+        let copied = set_secret_text("senha-de-teste-3").unwrap();
+        set_secret_text("texto do usuário").unwrap();
+        assert!(!clear_if_ours(&copied));
     }
 }

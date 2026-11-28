@@ -1,8 +1,8 @@
-//! `sigilvault-host.exe`: o navegador abre este programa para o Native Messaging. Ele só repassa
+//! `sigilvault-host` (`.exe` no Windows): o navegador abre este programa para o Native Messaging. Ele só repassa
 //! mensagens entre a extensão (stdin/stdout) e o app da bandeja (pipe protegido). O conteúdo vem
 //! criptografado de ponta a ponta, então ele não consegue ler nada.
 //!
-//! `sigilvault-host.exe`: the browser starts this program for Native Messaging. It only relays
+//! `sigilvault-host` (`.exe` on Windows): the browser starts this program for Native Messaging. It only relays
 //! messages between the extension (stdin/stdout) and the tray app (protected pipe). The content
 //! is end-to-end encrypted, so it cannot read anything.
 
@@ -13,23 +13,25 @@ fn main() -> std::process::ExitCode {
     host::run()
 }
 
-#[cfg(not(windows))]
-fn main() {
-    eprintln!("SigilVault só roda no Windows / SigilVault only runs on Windows");
+#[cfg(unix)]
+fn main() -> std::process::ExitCode {
+    host::run()
 }
 
-#[cfg(windows)]
+#[cfg(not(any(windows, unix)))]
+fn main() {
+    eprintln!("SigilVault só roda no Windows e no Linux / SigilVault only runs on Windows and Linux");
+}
+
+#[cfg(any(windows, unix))]
 mod host {
     use std::io::{self, Write};
-    use std::os::windows::process::CommandExt;
     use std::path::PathBuf;
     use std::process::{Command, ExitCode};
     use std::time::{Duration, Instant};
 
     use sigilvault_ipc::pipe::{self, Pipe};
     use sigilvault_ipc::{APP_EXE, MAX_MESSAGE, frame, process, signature};
-    use windows_sys::Win32::Foundation::ERROR_FILE_NOT_FOUND;
-    use windows_sys::Win32::System::Threading::{CREATE_BREAKAWAY_FROM_JOB, CREATE_NEW_PROCESS_GROUP, DETACHED_PROCESS};
 
     /// Quanto esperar o app abrir. / How long to wait for the app to start.
     const LAUNCH_WAIT: Duration = Duration::from_secs(20);
@@ -55,7 +57,10 @@ mod host {
 
     /// Abre o app na bandeja, fora do "job" do navegador (para não fechar junto com ele).
     /// Starts the app in the tray, outside the browser's job (so it does not close with it).
+    #[cfg(windows)]
     fn launch_app(app: &PathBuf) -> io::Result<()> {
+        use std::os::windows::process::CommandExt;
+        use windows_sys::Win32::System::Threading::{CREATE_BREAKAWAY_FROM_JOB, CREATE_NEW_PROCESS_GROUP, DETACHED_PROCESS};
         let base = DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP;
         Command::new(app)
             .arg("--tray")
@@ -65,10 +70,33 @@ mod host {
             .map(drop)
     }
 
+    /// Abre o app na bandeja, em grupo de processos próprio (não fecha junto com o navegador). A
+    /// entrada e a saída padrão são desligadas: o stdout do host é o canal do Native Messaging.
+    /// Starts the app in the tray, in its own process group (does not close with the browser).
+    /// Standard input and output are turned off: the host's stdout is the Native Messaging channel.
+    #[cfg(unix)]
+    fn launch_app(app: &PathBuf) -> io::Result<()> {
+        use std::os::unix::process::CommandExt;
+        use std::process::Stdio;
+        Command::new(app).arg("--tray").stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null()).process_group(0).spawn().map(drop)
+    }
+
+    /// O erro quer dizer "o app não está aberto"? / Does the error mean "the app is not running"?
+    fn app_not_running(e: &io::Error) -> bool {
+        #[cfg(windows)]
+        {
+            e.raw_os_error() == Some(windows_sys::Win32::Foundation::ERROR_FILE_NOT_FOUND as i32)
+        }
+        #[cfg(unix)]
+        {
+            e.kind() == io::ErrorKind::NotFound
+        }
+    }
+
     /// Conecta ao app; se ele não estiver aberto, abre e espera. / Connects to the app; if not running, starts it and waits.
     fn connect(name: &str, app: &PathBuf) -> io::Result<Pipe> {
         match Pipe::connect(name, Duration::from_secs(5)) {
-            Err(e) if e.raw_os_error() == Some(ERROR_FILE_NOT_FOUND as i32) => {
+            Err(e) if app_not_running(&e) => {
                 launch_app(app)?;
                 let deadline = Instant::now() + LAUNCH_WAIT;
                 loop {
@@ -150,6 +178,10 @@ mod host {
             );
             assert_eq!(
                 caller(&args(&["host.exe", r"C:\x\app.sigilvault.host.json", "sigilvault@sigilvault.app"])).as_deref(),
+                Some("firefox:sigilvault@sigilvault.app")
+            );
+            assert_eq!(
+                caller(&args(&["sigilvault-host", "/usr/lib/mozilla/native-messaging-hosts/app.sigilvault.host.json", "sigilvault@sigilvault.app"])).as_deref(),
                 Some("firefox:sigilvault@sigilvault.app")
             );
             assert_eq!(caller(&args(&["host.exe"])), None);

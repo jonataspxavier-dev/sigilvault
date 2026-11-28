@@ -31,3 +31,9 @@ tauri-plugin-dialog = "2.8.4"
 # UI Automation (other programs' password fields); the same version Tauri already uses.
 windows = { version = "0.62.2", features = ["Win32_Foundation", "Win32_System_Com", "Win32_System_Variant", "Win32_UI_Accessibility"] }
 windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_System_DataExchange", "Win32_System_Memory", "Win32_System_Ole", "Win32_Security_Cryptography", "Win32_UI_WindowsAndMessaging", "Win32_System_RemoteDesktop", "Win32_System_Power", "Win32_System_SystemServices", "Win32_UI_Input_KeyboardAndMouse", "Win32_System_SystemInformation", "Win32_System_ErrorReporting", "Win32_System_LibraryLoader", "Win32_Graphics_Gdi", "Win32_Security", "Win32_System_Threading", "Win32_System_Registry", "Win32_UI_Accessibility", "Win32_UI_HiDpi"] }
+
+[target."cfg(unix)".dependencies]
+libc = "0.2"
+# Chaveiro do sistema (Secret Service) para a chave do dispositivo. / System keyring (Secret Service) for the device key.
+oo7 = "0.7.3"
+tokio = { version = "1", features = ["rt"] }

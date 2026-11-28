@@ -13,7 +13,7 @@ mod state;
 mod storage;
 mod transfer;
 mod tray;
-mod win;
+mod platform;
 mod window;
 
 use std::time::Duration;
@@ -28,17 +28,18 @@ const IDLE_POLL: Duration = Duration::from_secs(5);
 /// Liga/desliga "Iniciar com o Windows" apontando para este executável.
 /// Turns "Start with Windows" on/off pointing at this executable.
 pub(crate) fn apply_startup(enabled: bool) -> std::io::Result<()> {
-    win::startup::set(enabled, &std::env::current_exe()?)
+    platform::startup::set(enabled, &std::env::current_exe()?)
 }
 
 /// Inicia o app. / Starts the app.
 pub fn run() {
     // Versão final: ninguém liga a depuração do WebView2 por variável de ambiente.
     // Release build: nobody turns on WebView2 debugging through an environment variable.
-    win::system::harden_webview_env();
+    platform::system::harden_webview_env();
     // Sem relatórios de erro com dump de memória. / No error reports with memory dumps.
-    win::system::exclude_from_error_reporting();
+    platform::system::exclude_from_error_reporting();
     // DLLs só da pasta do programa e do System32. / DLLs only from the program folder and System32.
+    #[cfg(windows)]
     sigilvault_ipc::harden::restrict_dll_search();
 
     let app = tauri::Builder::default()
@@ -54,6 +55,9 @@ pub fn run() {
             // Debug builds only: alternative data folder, so tests never touch the real vault.
             #[cfg(debug_assertions)]
             let dir = std::env::var_os("SIGILVAULT_DATA_DIR").map(std::path::PathBuf::from).unwrap_or(dir);
+            // A chave do dispositivo (Linux) usa a mesma pasta de dados. / The device key (Linux) uses the same data folder.
+            #[cfg(unix)]
+            platform::secret::configure(&dir);
             let paths = storage::Paths::new(&dir)?;
             app.manage(bridge::Bridge::new(&paths));
             app.manage(AppState::new(paths));
@@ -68,7 +72,7 @@ pub fn run() {
 
             // Bloqueio por eventos do Windows. / Lock on Windows events.
             let handle = app.handle().clone();
-            win::watcher::start(move || lock_app(&handle, false));
+            platform::watcher::start(move || lock_app(&handle, false));
 
             // Bloqueio por inatividade (desligado no modo "manter aberto").
             // Lock on inactivity (off in "keep open" mode).
@@ -80,7 +84,7 @@ pub fn run() {
                     let inner = state.lock();
                     (inner.vault.is_some(), inner.settings.auto_lock, inner.settings.auto_lock_minutes)
                 };
-                if unlocked && enabled && win::system::idle_millis() >= u64::from(minutes) * 60_000 {
+                if unlocked && enabled && platform::system::idle_millis() >= u64::from(minutes) * 60_000 {
                     lock_app(&handle, false);
                 }
             });

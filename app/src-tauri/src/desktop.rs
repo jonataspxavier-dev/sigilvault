@@ -26,10 +26,10 @@ use zeroize::Zeroizing;
 use crate::commands::{CmdError, CmdResult, backup_before, persist, vault_ref};
 use crate::settings::Settings;
 use crate::state::AppState;
-use crate::win::fields::{self, Slot};
-use crate::win::hotkeys::{self, Action};
-use crate::win::target::Target;
-use crate::win::typer::{self, Part, TypeError};
+use crate::platform::fields::{self, Slot};
+use crate::platform::hotkeys::{self, Action};
+use crate::platform::target::Target;
+use crate::platform::typer::{self, Part, TypeError};
 use crate::window;
 
 /// Etiqueta das entradas criadas pelo atalho de gerar, até o usuário confirmar.

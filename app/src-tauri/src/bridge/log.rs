@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 use crate::storage::atomic_write;
-use crate::win::dpapi;
+use crate::platform::secret;
 
 const LABEL: &[u8] = b"SigilVault fill log v1";
 /// Entradas mantidas. / Entries kept.
@@ -39,7 +39,7 @@ impl FillLog {
     pub fn load(path: &Path) -> Self {
         let entries = std::fs::read(path)
             .ok()
-            .and_then(|b| dpapi::unprotect_labeled(&b, LABEL))
+            .and_then(|b| secret::unprotect_labeled(&b, LABEL))
             .and_then(|b| serde_json::from_slice(&b).ok())
             .unwrap_or_default();
         Self { path: path.to_owned(), entries }
@@ -51,7 +51,7 @@ impl FillLog {
         let extra = self.entries.len().saturating_sub(MAX_ENTRIES);
         self.entries.drain(..extra);
         if let Ok(json) = serde_json::to_vec(&self.entries)
-            && let Some(sealed) = dpapi::protect_labeled(&json, LABEL)
+            && let Some(sealed) = secret::protect_labeled(&json, LABEL)
         {
             let _ = atomic_write(&self.path, &sealed);
         }

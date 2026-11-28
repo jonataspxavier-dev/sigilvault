@@ -2,7 +2,7 @@
 //! Windows integrations. The only place in the app with `unsafe`; each block explains why it is sound.
 
 pub mod clipboard;
-pub mod dpapi;
+pub mod secret;
 pub mod fields;
 pub mod hotkeys;
 pub mod startup;

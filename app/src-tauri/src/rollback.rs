@@ -18,7 +18,7 @@ pub struct Codec {
 
 impl Codec {
     /// DPAPI da conta atual. / Current account DPAPI.
-    pub const DPAPI: Self = Self { protect: crate::win::dpapi::protect, unprotect: crate::win::dpapi::unprotect };
+    pub const PLATFORM: Self = Self { protect: crate::platform::secret::protect, unprotect: crate::platform::secret::unprotect };
 }
 
 /// Resultado da verificação. / Check result.
@@ -96,9 +96,9 @@ mod tests {
     fn works_with_dpapi() {
         let dir = crate::storage::test_dir("rollback-dpapi");
         let path = dir.join("revision.guard");
-        RevisionGuard::load(&path, Codec::DPAPI).record("abc", 7);
+        RevisionGuard::load(&path, Codec::PLATFORM).record("abc", 7);
         // O arquivo em disco não é o JSON em texto puro. / The file on disk is not plain JSON.
         assert!(!String::from_utf8_lossy(&std::fs::read(&path).unwrap()).contains("abc"));
-        assert_eq!(RevisionGuard::load(&path, Codec::DPAPI).check("abc", 6), Check::Older { expected: 7, found: 6 });
+        assert_eq!(RevisionGuard::load(&path, Codec::PLATFORM).check("abc", 6), Check::Older { expected: 7, found: 6 });
     }
 }

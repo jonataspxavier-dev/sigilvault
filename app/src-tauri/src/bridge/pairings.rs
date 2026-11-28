@@ -12,7 +12,7 @@ use sigilvault_core::hex;
 use zeroize::Zeroizing;
 
 use crate::storage::atomic_write;
-use crate::win::dpapi;
+use crate::platform::secret;
 
 /// Rótulo DPAPI só destes dados. / DPAPI label only for this data.
 const LABEL: &[u8] = b"SigilVault pairing keys v1";
@@ -73,11 +73,11 @@ impl Pairings {
             .into_iter()
             .filter_map(|s| {
                 let id: [u8; 16] = hex::decode(&s.id)?.try_into().ok()?;
-                let opened = Zeroizing::new(dpapi::unprotect_labeled(&hex::decode(&s.key)?, LABEL)?);
+                let opened = Zeroizing::new(secret::unprotect_labeled(&hex::decode(&s.key)?, LABEL)?);
                 let key: [u8; 32] = opened.as_slice().try_into().ok()?;
                 // Lista ilegível = nenhum site liberado (nunca o contrário). / Unreadable list = no site allowed (never the reverse).
                 let sites = hex::decode(&s.sites)
-                    .and_then(|b| dpapi::unprotect_labeled(&b, SITES_LABEL))
+                    .and_then(|b| secret::unprotect_labeled(&b, SITES_LABEL))
                     .and_then(|b| serde_json::from_slice::<Vec<String>>(&b).ok())
                     .unwrap_or_default();
                 Some(Pairing {
@@ -100,9 +100,9 @@ impl Pairings {
             .list
             .iter()
             .map(|p| {
-                let key = dpapi::protect_labeled(p.key.as_slice(), LABEL).ok_or_else(|| io::Error::other("DPAPI"))?;
+                let key = secret::protect_labeled(p.key.as_slice(), LABEL).ok_or_else(|| io::Error::other("DPAPI"))?;
                 let sites_json = serde_json::to_vec(&p.sites).map_err(io::Error::other)?;
-                let sites = dpapi::protect_labeled(&sites_json, SITES_LABEL).ok_or_else(|| io::Error::other("DPAPI"))?;
+                let sites = secret::protect_labeled(&sites_json, SITES_LABEL).ok_or_else(|| io::Error::other("DPAPI"))?;
                 Ok(Stored {
                     id: hex::encode(&p.id),
                     caller: p.caller.clone(),
