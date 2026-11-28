@@ -4,6 +4,7 @@
 pub mod clipboard;
 pub mod fields;
 pub mod hotkeys;
+pub mod native_messaging;
 pub mod secret;
 pub mod startup;
 pub mod system;

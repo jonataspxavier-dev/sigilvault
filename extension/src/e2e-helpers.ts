@@ -32,7 +32,7 @@ import type { KeyStore } from "./keystore";
 import { type Pake, loadPake } from "./pake";
 
 export const ROOT = join(__dirname, "..", "..");
-export const HOST = join(ROOT, "target", "debug", "sigilvault-host.exe");
+export const HOST = join(ROOT, "target", "debug", process.platform === "win32" ? "sigilvault-host.exe" : "sigilvault-host");
 export const WASM = join(ROOT, "target", "wasm32-unknown-unknown", "release", "sigilvault_pairing.wasm");
 export const OURS = "chrome-extension://jclandjcanimgllfngognekhhhnomimf/";
 export const USER = "teste-e2e";
@@ -153,4 +153,16 @@ export async function pair(c: Controller): Promise<View> {
 /** SID do usuário (nome do pipe). / User SID (pipe name). */
 export function userSid(): string {
   return /S-1-5-[\d-]+/.exec(execSync(String.raw`C:\Windows\System32\whoami.exe /user`, { encoding: "utf8" }))![0];
+}
+
+/**
+ * Endereço da ponte do app: o named pipe do Windows ou o socket Unix do Linux (igual a
+ * `sigilvault_ipc::pipe::default_name`). / The app bridge address: the Windows named pipe or the
+ * Linux Unix socket (same as `sigilvault_ipc::pipe::default_name`).
+ */
+export function bridgeAddress(): string {
+  if (process.platform === "win32") return `\\\\.\\pipe\\SigilVault-${userSid()}`;
+  const run = process.env.XDG_RUNTIME_DIR;
+  const dir = run && run.startsWith("/") ? join(run, "sigilvault") : `/tmp/sigilvault-${process.getuid?.() ?? 0}`;
+  return join(dir, "bridge.sock");
 }

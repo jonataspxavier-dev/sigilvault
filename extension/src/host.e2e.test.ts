@@ -19,7 +19,7 @@ import { connect as netConnect } from "node:net";
 import { describe, expect, it } from "vitest";
 
 import { importPairingKey } from "./channel";
-import { OURS, PASSWORD, USER, controller, ensureUnlocked, invoke, pair, userSid, waitFor, wrong } from "./e2e-helpers";
+import { OURS, PASSWORD, USER, bridgeAddress, controller, ensureUnlocked, invoke, pair, waitFor, wrong } from "./e2e-helpers";
 import { randomBytes } from "./hex";
 import { memoryStore } from "./keystore";
 
@@ -105,8 +105,7 @@ describe("ponta a ponta com o app / end to end with the app", () => {
   });
 
   it("um programa que não é o host não entra no pipe / a program that is not the host cannot use the pipe", async () => {
-    const sid = userSid();
-    const sock = netConnect(`\\\\.\\pipe\\SigilVault-${sid}`);
+    const sock = netConnect(bridgeAddress());
     const body = Buffer.from(JSON.stringify({ t: "host", v: 1, caller: OURS }));
     const head = Buffer.alloc(4);
     head.writeUInt32LE(body.length);

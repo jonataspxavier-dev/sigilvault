@@ -45,7 +45,11 @@ pub fn run() {
     let app = tauri::Builder::default()
         // Uma só instância: abrir de novo apenas mostra a janela.
         // Single instance: launching again just shows the window.
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| window::open(app)))
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| match desktop::quick_from_args(&args) {
+            // `--quick search|generate`: abre direto o pop-up. / Opens the popup straight away.
+            Some(action) => desktop::trigger(app, action),
+            None => window::open(app),
+        }))
         // Diálogos nativos: usados só pelo Rust (a interface não tem permissão para eles).
         // Native dialogs: used only by Rust (the UI has no permission for them).
         .plugin(tauri_plugin_dialog::init())
@@ -65,6 +69,19 @@ pub fn run() {
 
             // Ponte com a extensão do navegador (pipe protegido). / Bridge with the browser extension (protected pipe).
             bridge::start(app.handle());
+
+            // Linux: registra o host nos navegadores instalados (no Windows, o instalador faz isso).
+            // Só na versão final: a de desenvolvimento usa `scripts/register-host.sh`.
+            // Linux: registers the host in the installed browsers (on Windows, the installer does it).
+            // Release only: the development build uses `scripts/register-host.sh`.
+            #[cfg(unix)]
+            if !cfg!(debug_assertions)
+                && let Ok(host) = sigilvault_ipc::process::sibling(sigilvault_ipc::HOST_EXE)
+                && host.is_file()
+                && let Err(e) = platform::native_messaging::install_user_manifests(&host)
+            {
+                eprintln!("manifestos do navegador / browser manifests: {e}");
+            }
 
             // Atalhos globais e Auto-Type. / Global hotkeys and Auto-Type.
             app.manage(desktop::Desktop::default());
@@ -100,9 +117,12 @@ pub fn run() {
                 }
             }
 
-            // `--tray` inicia só na bandeja (usado ao iniciar com o Windows).
-            // `--tray` starts in the tray only (used when starting with Windows).
-            if !std::env::args().any(|a| a == "--tray") {
+            // `--quick` abre só o pop-up; `--tray` inicia só na bandeja (usado ao iniciar com o sistema).
+            // `--quick` opens just the popup; `--tray` starts in the tray only (used when starting with the system).
+            let args: Vec<String> = std::env::args().collect();
+            if let Some(action) = desktop::quick_from_args(&args) {
+                desktop::trigger(app.handle(), action);
+            } else if !args.iter().any(|a| a == "--tray") {
                 window::open(app.handle());
             }
             Ok(())

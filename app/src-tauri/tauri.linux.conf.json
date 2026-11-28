@@ -1,0 +1,35 @@
+{
+  "bundle": {
+    "category": "Utility",
+    "targets": [
+      "deb",
+      "rpm",
+      "appimage"
+    ],
+    "linux": {
+      "deb": {
+        "section": "utils",
+        "recommends": [
+          "gnome-keyring | kwalletmanager"
+        ],
+        "files": {
+          "/etc/opt/chrome/native-messaging-hosts/app.sigilvault.host.json": "native-messaging/linux/app.sigilvault.host.chromium.json",
+          "/etc/chromium/native-messaging-hosts/app.sigilvault.host.json": "native-messaging/linux/app.sigilvault.host.chromium.json",
+          "/etc/opt/edge/native-messaging-hosts/app.sigilvault.host.json": "native-messaging/linux/app.sigilvault.host.chromium.json",
+          "/usr/lib/mozilla/native-messaging-hosts/app.sigilvault.host.json": "native-messaging/linux/app.sigilvault.host.firefox.json"
+        }
+      },
+      "rpm": {
+        "recommends": [
+          "gnome-keyring"
+        ],
+        "files": {
+          "/etc/opt/chrome/native-messaging-hosts/app.sigilvault.host.json": "native-messaging/linux/app.sigilvault.host.chromium.json",
+          "/etc/chromium/native-messaging-hosts/app.sigilvault.host.json": "native-messaging/linux/app.sigilvault.host.chromium.json",
+          "/etc/opt/edge/native-messaging-hosts/app.sigilvault.host.json": "native-messaging/linux/app.sigilvault.host.chromium.json",
+          "/usr/lib64/mozilla/native-messaging-hosts/app.sigilvault.host.json": "native-messaging/linux/app.sigilvault.host.firefox.json"
+        }
+      }
+    }
+  }
+}

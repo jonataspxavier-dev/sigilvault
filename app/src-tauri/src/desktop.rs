@@ -212,6 +212,30 @@ fn offer_save(app: &AppHandle, info: fields::FieldInfo) {
     window::open_offer(app);
 }
 
+/// Lê `--quick search` ou `--quick generate` da linha de comando. É o atalho que funciona em
+/// qualquer ambiente: no Linux (Wayland, principalmente), a pessoa liga uma tecla do sistema a
+/// esse comando. / Reads `--quick search` or `--quick generate` from the command line. It is the
+/// hotkey that works everywhere: on Linux (Wayland mostly), the person binds a system key to it.
+pub fn quick_from_args(args: &[String]) -> Option<Action> {
+    let pos = args.iter().position(|a| a == "--quick")?;
+    match args.get(pos + 1).map(String::as_str) {
+        Some("search") => Some(Action::Search),
+        Some("generate") => Some(Action::Generate),
+        _ => None,
+    }
+}
+
+/// Dispara o pop-up como se o atalho tivesse sido apertado agora (pela linha de comando).
+/// Triggers the popup as if the hotkey had just been pressed (from the command line).
+pub fn trigger(app: &AppHandle, action: Action) {
+    let app = app.clone();
+    // O alvo é lido antes de o pop-up existir, e fora da thread que chamou. / The target is read before the popup exists, off the calling thread.
+    std::thread::spawn(move || {
+        let target = crate::platform::target::foreground();
+        on_hotkey(&app, action, target);
+    });
+}
+
 fn on_hotkey(app: &AppHandle, action: Action, target: Option<Target>) {
     #[cfg(debug_assertions)]
     eprintln!("[sigilvault] atalho {action:?}, alvo: {:?}", target.as_ref().map(|t| t.exe_name()));
@@ -221,6 +245,24 @@ fn on_hotkey(app: &AppHandle, action: Action, target: Option<Target>) {
     *app.state::<Desktop>().session() = Some(Session { mode, target, field: None, prefill: String::new() });
     fields::hide_seal();
     window::open_quick(app);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn args(v: &[&str]) -> Vec<String> {
+        v.iter().map(|s| s.to_string()).collect()
+    }
+
+    #[test]
+    fn reads_the_quick_command_line() {
+        assert_eq!(quick_from_args(&args(&["app", "--quick", "search"])), Some(Action::Search));
+        assert_eq!(quick_from_args(&args(&["app", "--tray", "--quick", "generate"])), Some(Action::Generate));
+        assert_eq!(quick_from_args(&args(&["app", "--quick"])), None);
+        assert_eq!(quick_from_args(&args(&["app", "--quick", "outra"])), None);
+        assert_eq!(quick_from_args(&args(&["app", "--tray"])), None);
+    }
 }
 
 // ── Comandos do pop-up / Popup commands ───────────────────────────

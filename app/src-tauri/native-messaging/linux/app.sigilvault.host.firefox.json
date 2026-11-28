@@ -1,0 +1,7 @@
+{
+  "name": "app.sigilvault.host",
+  "description": "SigilVault",
+  "path": "/usr/bin/sigilvault-host",
+  "type": "stdio",
+  "allowed_extensions": ["sigilvault@sigilvault.app"]
+}
