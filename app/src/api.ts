@@ -65,6 +65,8 @@ export interface AppState {
   remainingCodes: number | null;
   retryAfterSecs: number;
   settings: Settings;
+  /** Sistema em que o app roda. / System the app runs on. */
+  platform: "windows" | "linux";
 }
 
 export interface Item {
@@ -169,6 +171,7 @@ export interface QuickContext {
   prefillUsername: string;
   /** Aberto pelo selo do campo de senha. / Opened by the password field seal. */
   fromField: boolean;
+  platform: "windows" | "linux";
 }
 
 export interface QuickItem {

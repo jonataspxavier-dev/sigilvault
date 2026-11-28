@@ -8,7 +8,7 @@ import "./medieval.css";
 
 import { type QuickContext, type QuickItem, api, isCmdError } from "./api";
 import { h, mount } from "./dom";
-import { setLang, t } from "./i18n";
+import { setLang, setPlatform, t } from "./i18n";
 import { session } from "./nav";
 import { busy, button, errorBox, errorMessage, field, passwordInput, textInput, toast } from "./ui";
 import { generatorPanel } from "./views/generator";
@@ -263,6 +263,7 @@ let afterStart: "save" | null = null;
 async function start(): Promise<void> {
   ctx = await api.quickContext();
   setLang(ctx.language);
+  setPlatform(ctx.platform);
   // O gerador lê as preferências daqui. / The generator reads preferences from here.
   session.settings = {
     language: ctx.language,

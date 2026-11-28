@@ -3,7 +3,7 @@
 
 import { api, type Lang } from "../api";
 import { h } from "../dom";
-import { getLang, setLang, t } from "../i18n";
+import { getLang, getPlatform, setLang, t } from "../i18n";
 import { nav, session } from "../nav";
 import { busy, button, divider, errorBox, errorMessage, field, passwordInput, strengthMeter, toast } from "../ui";
 import { showCodes } from "./auth";
@@ -78,7 +78,7 @@ function hotkeyInput(value: string): { el: HTMLElement; get(): string } {
     if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) return;
     const key = e.code === "Space" ? "Space" : /^Key[A-Z]$/.test(e.code) ? e.code.slice(3) : /^Digit\d$/.test(e.code) ? e.code.slice(5) : /^F\d{1,2}$/.test(e.code) ? e.code : null;
     if (!key) return;
-    const parts = [e.ctrlKey && "Ctrl", e.altKey && "Alt", e.shiftKey && "Shift", e.metaKey && "Win", key].filter(Boolean);
+    const parts = [e.ctrlKey && "Ctrl", e.altKey && "Alt", e.shiftKey && "Shift", e.metaKey && (getPlatform() === "linux" ? "Super" : "Win"), key].filter(Boolean);
     input.value = parts.join("+");
   });
   const off = h("button", { type: "button", class: "link", onClick: () => (input.value = "") }, t("set_hotkey_off"));

@@ -574,9 +574,50 @@ export function getLang(): Lang {
   return current;
 }
 
+export type Platform = "windows" | "linux";
+let platform: Platform = "windows";
+
+/** Sistema em que o app roda: troca alguns textos (Win+L, .exe, "Iniciar com o Windows"…). / System the app runs on: swaps some texts (Win+L, .exe, "Start with Windows"…). */
+export function setPlatform(p: Platform): void {
+  platform = p;
+}
+
+export function getPlatform(): Platform {
+  return platform;
+}
+
+/** Textos que mudam no Linux; o resto vale para os dois sistemas. / Texts that change on Linux; the rest holds for both systems. */
+export const linuxTexts: Record<Lang, Partial<Record<Key, string>>> = {
+  pt: {
+    set_startup: "Iniciar com o sistema",
+    set_startup_hint: "Abre na bandeja ao entrar na sua conta. O cofre continua bloqueado até você digitar a senha mestra.",
+    field_app_path: "Programa (caminho do executável)",
+    app_path_hint: "O Auto-Type só reconhece este programa pelo executável, nunca pelo título da janela. O jeito mais fácil: abra o programa e use o atalho de gerar ou de busca.",
+    set_hotkeys_intro:
+      "No Linux o atalho passa pelo seu desktop, que pode pedir permissão na primeira vez. Se não funcionar, crie um atalho do sistema que rode `sigilvault-app --quick search` (busca) e `sigilvault-app --quick generate` (gerar). A combinação precisa ter Ctrl, Alt ou Super.",
+    quick_elevated: "Programa de outro usuário: o SigilVault não digita nele. Use Copiar.",
+    err_elevated_target: "O programa roda como outro usuário: não é possível digitar nele.",
+    err_type_blocked: "Esse programa não deixou o SigilVault escrever no campo. Use Copiar.",
+    set_lock_keep_hint: "Bloqueia só ao travar a tela, ao suspender ou ao sair da conta. Mais prático para salvar as senhas do dia a dia; qualquer pessoa no seu PC desbloqueado acessa o cofre.",
+  },
+  en: {
+    set_startup: "Start with the system",
+    set_startup_hint: "Opens in the tray when you sign in. The vault stays locked until you type the master password.",
+    field_app_path: "Program (executable path)",
+    app_path_hint: "Auto-Type only recognizes this program by its executable, never by the window title. Easiest way: open the program and use the generate or search hotkey.",
+    set_hotkeys_intro:
+      "On Linux the hotkey goes through your desktop, which may ask for permission the first time. If it does not work, create a system shortcut that runs `sigilvault-app --quick search` (search) and `sigilvault-app --quick generate` (generate). The combination needs Ctrl, Alt or Super.",
+    quick_elevated: "Another user's program: SigilVault does not type into it. Use Copy.",
+    err_elevated_target: "The program runs as another user: it cannot be typed into.",
+    err_type_blocked: "That program did not let SigilVault write into the field. Use Copy.",
+    set_lock_keep_hint: "Locks only when the screen locks, on sleep or on sign-out. Handier for saving everyday passwords; anyone at your unlocked PC can open the vault.",
+  },
+};
+
 /** Traduz e troca `{nome}` pelos valores. / Translates and replaces `{name}` with values. */
 export function t(key: Key, vars: Record<string, string | number> = {}): string {
-  return format(dictionaries[current][key], vars);
+  const text = (platform === "linux" ? linuxTexts[current][key] : undefined) ?? dictionaries[current][key];
+  return format(text, vars);
 }
 
 export function format(text: string, vars: Record<string, string | number>): string {

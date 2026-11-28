@@ -1,7 +1,7 @@
 // Garante que as duas línguas têm as mesmas chaves e os mesmos {marcadores}.
 // Ensures both languages have the same keys and the same {placeholders}.
 import { describe, expect, it } from "vitest";
-import { dictionaries, format } from "./i18n";
+import { dictionaries, format, linuxTexts } from "./i18n";
 
 const placeholders = (s: string) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
 
@@ -13,6 +13,16 @@ describe("i18n", () => {
   it("marcadores iguais nas duas línguas / same placeholders", () => {
     for (const key of Object.keys(dictionaries.pt) as (keyof typeof dictionaries.pt)[]) {
       expect(placeholders(dictionaries.en[key]), key).toEqual(placeholders(dictionaries.pt[key]));
+    }
+  });
+
+  it("textos do Linux existem nas duas línguas e têm os mesmos marcadores / Linux texts exist in both languages with the same placeholders", () => {
+    expect(Object.keys(linuxTexts.en).sort()).toEqual(Object.keys(linuxTexts.pt).sort());
+    for (const lang of ["pt", "en"] as const) {
+      for (const [key, text] of Object.entries(linuxTexts[lang])) {
+        expect(Object.keys(dictionaries[lang]), key).toContain(key);
+        expect(placeholders(text), key).toEqual(placeholders(dictionaries[lang][key as keyof typeof dictionaries.pt]));
+      }
     }
   });
 

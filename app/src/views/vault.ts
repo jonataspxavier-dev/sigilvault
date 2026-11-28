@@ -3,7 +3,7 @@
 
 import { api, type Item, type ItemInput, type ItemKind } from "../api";
 import { h, mount } from "../dom";
-import { getLang, t } from "../i18n";
+import { getLang, getPlatform, t } from "../i18n";
 import { icon, type IconName } from "../icons";
 import { gateClose, sparks, unroll } from "../motion";
 import { session } from "../nav";
@@ -349,7 +349,7 @@ export function showVault(opts: { rollbackWarning?: boolean } = {}): void {
     const user = textInput({ value: existing?.username, autocomplete: "off", maxLength: 300 });
     const url = textInput({ value: existing?.url, placeholder: "https://", maxLength: 2000 });
     const subdomains = h("input", { type: "checkbox", checked: existing?.matchSubdomains ?? false });
-    const appPath = textInput({ value: existing?.appPath, placeholder: "C:\\Program Files\\…\\programa.exe", maxLength: 1000 });
+    const appPath = textInput({ value: existing?.appPath, placeholder: getPlatform() === "linux" ? "/usr/bin/programa" : "C:\\Program Files\\…\\programa.exe", maxLength: 1000 });
     const pw = passwordInput({ placeholder: existing?.hasPassword ? t("password_keep") : "", autocomplete: "new-password" });
     const removePw = h("input", { type: "checkbox" });
     const notes = h("textarea", { class: "input textarea", rows: 5, spellcheck: false, maxLength: 20000 });

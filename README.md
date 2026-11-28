@@ -19,15 +19,15 @@
 
 ## Português
 
-**SigilVault** é um gerenciador de senhas **local** para Windows. Ele guarda tudo criptografado no próprio computador, preenche senhas no navegador e em apps desktop e gera senhas fortes. Nada vai para a nuvem, a menos que você escolha.
+**SigilVault** é um gerenciador de senhas **local** para Windows e Linux. Ele guarda tudo criptografado no próprio computador, preenche senhas no navegador e em apps desktop e gera senhas fortes. Nada vai para a nuvem, a menos que você escolha.
 
-> Status: **Fase 7 em andamento**: instalador por máquina, memória travada, relatório de saúde e endurecimento prontos. Para instalar (versão de testes), baixe o instalador em [Releases](https://github.com/jonataspxavier-dev/sigilvault/releases) e siga o [guia de instalação](docs/INSTALAR.md).
+> Status: **Fase 7 em andamento**: instalador por máquina, memória travada, relatório de saúde e endurecimento prontos. Para instalar (versão de testes), baixe o instalador em [Releases](https://github.com/jonataspxavier-dev/sigilvault/releases) e siga o [guia de instalação](docs/INSTALAR.md). A versão para **Linux** (`.deb` e `.rpm`) está em testes: veja a [seção Linux](docs/INSTALAR.md#linux-versão-de-testes).
 
 ### Visão geral
 
 - **Segurança em primeiro lugar:** os dados só são descriptografados na memória, na hora de usar.
 - **Local-first:** sem servidor, sem conta online e sem telemetria.
-- **Leve:** um serviço na bandeja do Windows de ~10–20 MB; a janela só é carregada quando aberta.
+- **Leve:** um serviço na bandeja do sistema de ~10–20 MB; a janela só é carregada quando aberta.
 - **Senhas fortes como hábito:** toda senha nova nasce do gerador.
 - **Identidade própria:** nome, ícones e visual 100% originais, com estilo medieval nórdico.
 
@@ -77,23 +77,25 @@ Apps desktop ◄──────────── Auto-Type (atalho) ──�
 
 ### Desenvolvimento
 
-```powershell
+```bash
 cargo test --workspace          # testes do núcleo e do app (Rust)
-cd app; npm install; npm test   # testes da interface
-cd extension; npm install; npm test; npm run build   # extensão (veja extension/README.md)
-npx tauri dev                   # abre o app em modo de desenvolvimento
-npx tauri build                 # instalador (target\release\bundle\nsis)
+cd app && npm install && npm test   # testes da interface
+cd extension && npm install && npm run build && npm test   # extensão (veja extension/README.md)
+cd app && npx tauri dev         # abre o app em modo de desenvolvimento
+cd app && npx tauri build       # pacote: NSIS no Windows; .deb, .rpm e AppImage no Linux
 ```
 
-Requisitos: Rust estável (rustup), Node.js LTS e Visual Studio Build Tools com C++.
+Requisitos: Rust estável (rustup, com o alvo `wasm32-unknown-unknown`) e Node.js LTS. No Windows, o Visual Studio Build Tools com C++. No Linux, `libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev`.
+
+No Linux, rode o app com um ambiente limpo se o terminal for de um editor instalado como snap ou flatpak: as variáveis `GSETTINGS_SCHEMA_DIR`, `GTK_PATH` e parecidas, herdadas do editor, fazem o GTK falhar. Para testar a extensão, use `./scripts/register-host.sh` (o equivalente do `register-host.ps1`).
 
 ---
 
 ## English
 
-**SigilVault** is a **local** password manager for Windows. It keeps everything encrypted on your own computer, fills passwords in the browser and in desktop apps, and generates strong passwords. Nothing goes to the cloud unless you choose so.
+**SigilVault** is a **local** password manager for Windows and Linux. It keeps everything encrypted on your own computer, fills passwords in the browser and in desktop apps, and generates strong passwords. Nothing goes to the cloud unless you choose so.
 
-> Status: **Phase 7 in progress**: per-machine installer, locked memory, health report and hardening are done. To install (test build), download the installer from [Releases](https://github.com/jonataspxavier-dev/sigilvault/releases) and follow the [install guide](docs/INSTALAR.md#english).
+> Status: **Phase 7 in progress**: per-machine installer, locked memory, health report and hardening are done. To install (test build), download the installer from [Releases](https://github.com/jonataspxavier-dev/sigilvault/releases) and follow the [install guide](docs/INSTALAR.md#english). The **Linux** version (`.deb` and `.rpm`) is in testing: see the [Linux section](docs/INSTALAR.md#linux-test-build).
 
 ### Overview
 
@@ -149,12 +151,14 @@ Desktop apps ◄──────────── Auto-Type (hotkey) ── T
 
 ### Development
 
-```powershell
+```bash
 cargo test --workspace          # core and app tests (Rust)
-cd app; npm install; npm test   # UI tests
-cd extension; npm install; npm test; npm run build   # extension (see extension/README.md)
-npx tauri dev                   # opens the app in development mode
-npx tauri build                 # installer (target\release\bundle\nsis)
+cd app && npm install && npm test   # UI tests
+cd extension && npm install && npm run build && npm test   # extension (see extension/README.md)
+cd app && npx tauri dev         # opens the app in development mode
+cd app && npx tauri build       # package: NSIS on Windows; .deb, .rpm and AppImage on Linux
 ```
 
-Requirements: stable Rust (rustup), Node.js LTS and Visual Studio Build Tools with C++.
+Requirements: stable Rust (rustup, with the `wasm32-unknown-unknown` target) and Node.js LTS. On Windows, Visual Studio Build Tools with C++. On Linux, `libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev`.
+
+On Linux, run the app with a clean environment if the terminal comes from an editor installed as a snap or flatpak: variables such as `GSETTINGS_SCHEMA_DIR` and `GTK_PATH`, inherited from the editor, make GTK fail. To test the extension, use `./scripts/register-host.sh` (the counterpart of `register-host.ps1`).

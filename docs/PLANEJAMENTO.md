@@ -14,7 +14,7 @@ Princípios do projeto:
 - **Senhas fortes como hábito.** Toda senha nova, no navegador ou no desktop, nasce do gerador.
 - **Identidade própria.** Nome, ícones e visual 100% originais.
 
-Primeira plataforma: Windows 10 e 11. Linux e macOS ficam para depois. O repositório começou privado e hoje é público no GitHub, e os commits ficam somente no nome do autor do projeto (sem coautoria).
+Primeira plataforma: Windows 10 e 11. O Linux (Wayland e X11, pacotes .deb e .rpm) veio em seguida e está em testes; o macOS fica para depois. O repositório começou privado e hoje é público no GitHub, e os commits ficam somente no nome do autor do projeto (sem coautoria).
 
 Idiomas: a interface do app e da extensão é bilíngue (português e inglês), com troca de idioma nas configurações. Commits e comentários do código também são bilíngues.
 

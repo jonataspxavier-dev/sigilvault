@@ -290,6 +290,7 @@ pub struct QuickContext {
     prefill_username: String,
     /// Aberto pelo selo: preenche campo a campo. / Opened by the seal: fills field by field.
     from_field: bool,
+    platform: &'static str,
 }
 
 /// Para onde o pop-up vai digitar e em que modo. / Where the popup will type and in which mode.
@@ -325,6 +326,7 @@ pub fn quick_context(state: State<'_, AppState>, desktop: State<'_, Desktop>) ->
         generator: inner.settings.generator,
         prefill_username,
         from_field,
+        platform: crate::commands::platform_name(),
     }
 }
 

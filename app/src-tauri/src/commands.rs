@@ -148,6 +148,13 @@ pub struct AppStateDto {
     remaining_codes: Option<usize>,
     retry_after_secs: u64,
     settings: Settings,
+    /// `windows` ou `linux`: a interface ajusta textos e orientações. / `windows` or `linux`: the UI adjusts texts and guidance.
+    platform: &'static str,
+}
+
+/// Sistema em que o app roda. / System the app runs on.
+pub fn platform_name() -> &'static str {
+    if cfg!(windows) { "windows" } else { "linux" }
 }
 
 #[tauri::command(async)]
@@ -164,6 +171,7 @@ pub fn app_state(state: State<'_, AppState>) -> AppStateDto {
         remaining_codes: inner.vault.as_ref().map(Vault::remaining_recovery_codes),
         retry_after_secs: inner.attempts.remaining(Instant::now()).as_secs(),
         settings: inner.settings.clone(),
+        platform: platform_name(),
     }
 }
 

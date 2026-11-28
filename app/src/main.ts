@@ -5,7 +5,7 @@ import "./styles.css";
 import "./medieval.css";
 import { listen } from "@tauri-apps/api/event";
 import { api } from "./api";
-import { setLang } from "./i18n";
+import { setLang, setPlatform } from "./i18n";
 import { session } from "./nav";
 import { errorMessage } from "./ui";
 import { showCreate, showRecover, showUnlock } from "./views/auth";
@@ -17,6 +17,7 @@ async function boot(): Promise<void> {
   session.settings = state.settings;
   session.remainingCodes = state.remainingCodes;
   setLang(state.settings.language);
+  setPlatform(state.platform);
   if (state.unlocked) {
     showVault();
     // A janela pode ter sido aberta justamente para mostrar um código. / The window may have opened just to show a code.
