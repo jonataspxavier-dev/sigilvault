@@ -26,6 +26,9 @@ pub mod signature;
 mod user;
 
 #[cfg(unix)]
+#[path = "unix/appimage.rs"]
+pub mod appimage;
+#[cfg(unix)]
 #[path = "unix/pipe.rs"]
 pub mod pipe;
 #[cfg(unix)]

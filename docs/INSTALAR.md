@@ -59,9 +59,17 @@ Funciona em distribuições com GTK 3 e WebKitGTK 4.1 (Ubuntu 22.04 ou mais novo
 
 O app fica em `/usr/bin`, pasta que só o administrador altera. É por isso que o app confia no conector da extensão, então **não copie os arquivos para outra pasta**.
 
+### AppImage (qualquer distribuição)
+
+1. Baixe `SigilVault_<versão>_amd64.AppImage`, confira o SHA-256 e dê permissão: `chmod +x SigilVault_*.AppImage`.
+2. Rode. Se aparecer erro de FUSE, instale `libfuse2` (no Ubuntu 24.04 ou mais novo, `libfuse2t64`) ou rode com `APPIMAGE_EXTRACT_AND_RUN=1`.
+3. Ao abrir, o app copia o conector do navegador para `~/.local/lib/sigilvault/` e registra os navegadores instalados. **Não mova o AppImage de lugar depois**; se mover, abra-o de novo.
+
+A proteção do conector é um pouco mais fraca que a do `.deb`: o AppImage não fica numa pasta do administrador. Por isso o app só aceita um conector com o conteúdo idêntico ao que veio dentro do AppImage, e o conector só aceita o app aberto a partir do AppImage registrado. Para o melhor nível de proteção, prefira o `.deb` ou o `.rpm`.
+
 ### 2. Instalar a extensão
 
-A extensão fica em `/usr/lib/SigilVault/extension/`. O pacote já registra o conector para Chrome, Chromium, Edge e Firefox; ao abrir, o app registra também Brave, Vivaldi e Opera que estiverem instalados.
+A extensão fica em `/usr/lib/SigilVault/extension/` (no AppImage, dentro dele: extraia com `./SigilVault_*.AppImage --appimage-extract` e use a pasta `squashfs-root/usr/lib/SigilVault/extension/`). O pacote já registra o conector para Chrome, Chromium, Edge e Firefox; ao abrir, o app registra também Brave, Vivaldi e Opera que estiverem instalados.
 
 - **Chrome, Chromium, Brave, Edge, Vivaldi ou Opera:** abra a página de extensões, ligue o **Modo do desenvolvedor**, clique em **Carregar sem compactação** e escolha `/usr/lib/SigilVault/extension/chromium`.
 - **Firefox:** abra `about:debugging#/runtime/this-firefox`, clique em **Carregar extensão temporária** e escolha `/usr/lib/SigilVault/extension/firefox/manifest.json`.
@@ -85,7 +93,7 @@ Depois, fixe o ícone, clique nele e siga o pareamento: o app mostra um código 
 - O aviso "Guardar este login?" depois de entrar num programa.
 - O selo desenhado dentro do campo (no Linux é uma notificação).
 - Digitar teclas em programas que não expõem o campo pela acessibilidade.
-- AppImage com a extensão do navegador (o AppImage abre o cofre e os programas, mas a ponte com o navegador exige o `.deb` ou o `.rpm`) e Flatpak.
+- Flatpak.
 
 ---
 
@@ -146,9 +154,17 @@ Works on distributions with GTK 3 and WebKitGTK 4.1 (Ubuntu 22.04 or newer, Debi
 
 The app lives in `/usr/bin`, a folder only an administrator can change. That is why the app trusts the extension connector, so **do not copy the files to another folder**.
 
+### AppImage (any distribution)
+
+1. Download `SigilVault_<version>_amd64.AppImage`, check the SHA-256 and make it executable: `chmod +x SigilVault_*.AppImage`.
+2. Run it. If you get a FUSE error, install `libfuse2` (on Ubuntu 24.04 or newer, `libfuse2t64`) or run with `APPIMAGE_EXTRACT_AND_RUN=1`.
+3. When it opens, the app copies the browser connector to `~/.local/lib/sigilvault/` and registers the installed browsers. **Do not move the AppImage afterwards**; if you do, open it again.
+
+The connector's protection is a bit weaker than the `.deb`'s: the AppImage does not live in an administrator folder. So the app only accepts a connector whose content is identical to the one that came inside the AppImage, and the connector only accepts the app opened from the registered AppImage. For the best level of protection, prefer the `.deb` or `.rpm`.
+
 ### 2. Install the extension
 
-The extension lives in `/usr/lib/SigilVault/extension/`. The package already registers the connector for Chrome, Chromium, Edge and Firefox; when it opens, the app also registers any installed Brave, Vivaldi and Opera.
+The extension lives in `/usr/lib/SigilVault/extension/` (in the AppImage, inside it: extract with `./SigilVault_*.AppImage --appimage-extract` and use the `squashfs-root/usr/lib/SigilVault/extension/` folder). The package already registers the connector for Chrome, Chromium, Edge and Firefox; when it opens, the app also registers any installed Brave, Vivaldi and Opera.
 
 - **Chrome, Chromium, Brave, Edge, Vivaldi or Opera:** open the extensions page, turn on **Developer mode**, click **Load unpacked** and pick `/usr/lib/SigilVault/extension/chromium`.
 - **Firefox:** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on** and pick `/usr/lib/SigilVault/extension/firefox/manifest.json`.
@@ -172,4 +188,4 @@ Then pin the icon, click it and follow the pairing: the app shows an 8-character
 - The "Keep this login?" notice after signing in to a program.
 - The seal drawn inside the field (on Linux it is a notification).
 - Typing keys into programs that do not expose the field through accessibility.
-- AppImage with the browser extension (the AppImage opens the vault and programs, but the browser bridge needs the `.deb` or `.rpm`) and Flatpak.
+- Flatpak.

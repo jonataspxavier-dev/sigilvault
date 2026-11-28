@@ -23,7 +23,9 @@ use std::time::{Duration, Instant};
 use serde_json::{Value, json};
 use sigilvault_core::hex;
 use sigilvault_ipc::pipe::Pipe;
-use sigilvault_ipc::{HOST_EXE, MAX_MESSAGE, allowed_caller, frame, process, signature};
+#[cfg(windows)]
+use sigilvault_ipc::HOST_EXE;
+use sigilvault_ipc::{MAX_MESSAGE, allowed_caller, frame, process, signature};
 use sigilvault_pairing::Channel;
 use tauri::AppHandle;
 
@@ -118,11 +120,22 @@ fn hex_bytes(msg: &Value, key: &str) -> Option<Vec<u8>> {
 }
 
 /// O executável do outro lado é o nosso host? / Is the executable on the other side our host?
+#[cfg(windows)]
 fn peer_is_our_host(pipe: &Pipe) -> bool {
     let (Ok(me), Ok(host)) = (std::env::current_exe(), process::sibling(HOST_EXE)) else { return false };
     pipe.peer_pid()
         .and_then(process::image_path)
         .is_ok_and(|peer| process::same_file(&peer, &host) && signature::peer_allowed(&me, &peer))
+}
+
+/// No Linux o conector pode ser o que está ao lado do app (`.deb`/`.rpm`) ou, no AppImage, a cópia
+/// na pasta do usuário, desde que idêntica à que veio dentro do AppImage.
+/// On Linux the connector may be the one next to the app (`.deb`/`.rpm`) or, in the AppImage, the
+/// copy in the user's folder, as long as it is identical to the one that came inside the AppImage.
+#[cfg(unix)]
+fn peer_is_our_host(pipe: &Pipe) -> bool {
+    let Ok(me) = std::env::current_exe() else { return false };
+    pipe.peer_pid().and_then(process::image_path).is_ok_and(|peer| process::is_our_host(&peer) && signature::peer_allowed(&me, &peer))
 }
 
 /// Atende uma conexão até ela terminar. / Serves one connection until it ends.

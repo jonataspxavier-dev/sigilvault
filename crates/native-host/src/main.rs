@@ -31,6 +31,7 @@ mod host {
     use std::time::{Duration, Instant};
 
     use sigilvault_ipc::pipe::{self, Pipe};
+    #[cfg_attr(unix, allow(unused_imports))]
     use sigilvault_ipc::{APP_EXE, MAX_MESSAGE, frame, process, signature};
 
     /// Quanto esperar o app abrir. / How long to wait for the app to start.
@@ -81,6 +82,30 @@ mod host {
         Command::new(app).arg("--tray").stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null()).process_group(0).spawn().map(drop)
     }
 
+    /// O que abrir quando o app não está rodando. / What to start when the app is not running.
+    #[cfg(windows)]
+    fn app_path() -> io::Result<PathBuf> {
+        process::sibling(APP_EXE)
+    }
+
+    /// No Linux: o app ao lado do conector ou, no AppImage, o AppImage anotado.
+    /// On Linux: the app next to the connector or, in the AppImage, the noted AppImage.
+    #[cfg(unix)]
+    fn app_path() -> io::Result<PathBuf> {
+        process::app_to_launch()
+    }
+
+    /// O processo do outro lado é o nosso app? / Is the process on the other side our app?
+    #[cfg(windows)]
+    fn peer_is_app(me: &std::path::Path, app: &std::path::Path, pid: u32) -> bool {
+        process::image_path(pid).is_ok_and(|peer| process::same_file(&peer, app) && signature::peer_allowed(me, &peer))
+    }
+
+    #[cfg(unix)]
+    fn peer_is_app(me: &std::path::Path, _app: &std::path::Path, pid: u32) -> bool {
+        process::is_our_app(me, pid)
+    }
+
     /// O erro quer dizer "o app não está aberto"? / Does the error mean "the app is not running"?
     fn app_not_running(e: &io::Error) -> bool {
         #[cfg(windows)]
@@ -115,17 +140,14 @@ mod host {
     pub fn run() -> ExitCode {
         let args: Vec<String> = std::env::args().collect();
         let Some(caller) = caller(&args) else { return fail("bad_caller") };
-        let (Ok(me), Ok(app), Ok(name)) = (std::env::current_exe(), process::sibling(APP_EXE), pipe::default_name()) else {
+        let (Ok(me), Ok(app), Ok(name)) = (std::env::current_exe(), app_path(), pipe::default_name()) else {
             return fail("app_unavailable");
         };
         let Ok(pipe) = connect(&name, &app) else { return fail("app_unavailable") };
 
         // Do outro lado precisa estar o nosso app (mesma pasta e mesma assinatura).
         // Our app must be on the other side (same folder and same signature).
-        let trusted = pipe
-            .peer_pid()
-            .and_then(process::image_path)
-            .is_ok_and(|peer| process::same_file(&peer, &app) && signature::peer_allowed(&me, &peer));
+        let trusted = pipe.peer_pid().is_ok_and(|pid| peer_is_app(&me, &app, pid));
         if !trusted {
             return fail("untrusted_app");
         }

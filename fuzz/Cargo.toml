@@ -1,0 +1,55 @@
+[package]
+name = "sigilvault-fuzz"
+version = "0.0.0"
+edition = "2024"
+description = "Fuzzing guiado por cobertura / Coverage-guided fuzzing"
+license = "UNLICENSED"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+sigilvault-core = { path = "../core" }
+sigilvault-pairing = { path = "../crates/pairing" }
+sigilvault-ipc = { path = "../crates/ipc" }
+
+# Fora do workspace principal: precisa do compilador "nightly". / Outside the main workspace: needs the "nightly" compiler.
+[workspace]
+
+[[bin]]
+name = "import_parse"
+path = "fuzz_targets/import_parse.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "vault_file"
+path = "fuzz_targets/vault_file.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "recovery_code"
+path = "fuzz_targets/recovery_code.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "origin"
+path = "fuzz_targets/origin.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "frame"
+path = "fuzz_targets/frame.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "pairing_messages"
+path = "fuzz_targets/pairing_messages.rs"
+test = false
+doc = false

@@ -31,6 +31,29 @@ pub(crate) fn apply_startup(enabled: bool) -> std::io::Result<()> {
     platform::startup::set(enabled, &std::env::current_exe()?)
 }
 
+/// Linux: registra o conector nos navegadores instalados. Num AppImage, copia antes o conector
+/// para a pasta do usuário (o AppImage roda de uma pasta temporária) e anota onde ele está.
+/// Linux: registers the connector in the installed browsers. In an AppImage, first copies the
+/// connector to the user's folder (the AppImage runs from a temporary folder) and notes where it is.
+#[cfg(unix)]
+fn register_browser_host() {
+    use sigilvault_ipc::{HOST_EXE, appimage, process};
+    let Ok(bundled) = process::sibling(HOST_EXE) else { return };
+    if !bundled.is_file() {
+        return;
+    }
+    let host = match appimage::running_appimage() {
+        Some(image) => match appimage::install_host(&bundled, &image) {
+            Ok(copy) => copy,
+            Err(e) => return eprintln!("conector do AppImage / AppImage connector: {e}"),
+        },
+        None => bundled,
+    };
+    if let Err(e) = platform::native_messaging::install_user_manifests(&host) {
+        eprintln!("manifestos do navegador / browser manifests: {e}");
+    }
+}
+
 /// Inicia o app. / Starts the app.
 pub fn run() {
     // Versão final: ninguém liga a depuração do WebView2 por variável de ambiente.
@@ -75,12 +98,8 @@ pub fn run() {
             // Linux: registers the host in the installed browsers (on Windows, the installer does it).
             // Release only: the development build uses `scripts/register-host.sh`.
             #[cfg(unix)]
-            if !cfg!(debug_assertions)
-                && let Ok(host) = sigilvault_ipc::process::sibling(sigilvault_ipc::HOST_EXE)
-                && host.is_file()
-                && let Err(e) = platform::native_messaging::install_user_manifests(&host)
-            {
-                eprintln!("manifestos do navegador / browser manifests: {e}");
+            if !cfg!(debug_assertions) {
+                register_browser_host();
             }
 
             // Atalhos globais e Auto-Type. / Global hotkeys and Auto-Type.

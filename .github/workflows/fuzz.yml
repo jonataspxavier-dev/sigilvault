@@ -1,0 +1,37 @@
+# Fuzzing semanal dos pontos que leem dados de fora (importadores, arquivo do cofre, código de
+# recuperação, regra de origem, mensagens do host e do pareamento). Se achar uma falha, o arquivo
+# que a causou fica anexado à execução.
+# Weekly fuzzing of the places that read outside data (importers, vault file, recovery code, origin
+# rule, host and pairing messages). If it finds a crash, the file that caused it is attached to the run.
+name: Fuzzing
+
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [import_parse, vault_file, recovery_code, origin, frame, pairing_messages]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fuzz
+      - run: cargo install cargo-fuzz --locked
+      - name: Fuzzing (5 min)
+        working-directory: fuzz
+        run: cargo fuzz run ${{ matrix.target }} -- -max_total_time=300 -rss_limit_mb=2048 -timeout=10
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: fuzz-crash-${{ matrix.target }}
+          path: fuzz/artifacts/${{ matrix.target }}/*

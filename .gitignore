@@ -57,3 +57,9 @@ Desktop.ini
 
 # Binários copiados para o instalador / Binaries copied for the installer
 app/src-tauri/binaries/
+
+# Fuzzing: compilação, corpus e falhas guardadas ficam fora do repositório. / Fuzzing: build, corpus and saved crashes stay out of the repository.
+fuzz/target/
+fuzz/corpus/
+fuzz/artifacts/
+fuzz/Cargo.lock

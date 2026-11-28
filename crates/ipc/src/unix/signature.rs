@@ -20,11 +20,18 @@ pub fn signer(_path: &Path) -> Signer {
 }
 
 /// Um lado aceita o outro? Versão de depuração aceita; versão final só aceita os dois lado a lado
-/// numa pasta protegida (instalação do pacote .deb ou .rpm).
+/// numa pasta protegida (instalação do pacote .deb ou .rpm) ou, no AppImage, o conector idêntico ao empacotado.
 /// Does one side accept the other? Debug builds accept; release builds only accept the two side by
 /// side in a protected folder (the .deb or .rpm package install).
 pub fn peer_allowed(own: &Path, peer: &Path) -> bool {
-    cfg!(debug_assertions) || crate::protected::protected_install(own, peer)
+    cfg!(debug_assertions) || crate::protected::protected_install(own, peer) || appimage_host(own, peer)
+}
+
+/// Modo AppImage: o conector que fala com o app tem o mesmo conteúdo do que veio no AppImage.
+/// AppImage mode: the connector talking to the app has the same content as the one that came in the AppImage.
+fn appimage_host(own: &Path, peer: &Path) -> bool {
+    crate::appimage::running_appimage().is_some()
+        && own.parent().map(|dir| dir.join(crate::HOST_EXE)).is_some_and(|bundled| crate::appimage::same_content(&bundled, peer))
 }
 
 #[cfg(test)]

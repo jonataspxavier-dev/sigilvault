@@ -1,0 +1,66 @@
+# Gera os pacotes do Linux (.deb, .rpm e AppImage) e guarda como artefatos da execução. Quando
+# a execução vem de uma tag `v*` e a versão (release) já existe no GitHub, anexa os pacotes a ela.
+# Nunca cria nem publica uma versão sozinho.
+# Builds the Linux packages (.deb, .rpm and AppImage) and keeps them as run artifacts. When the run
+# comes from a `v*` tag and the release already exists on GitHub, attaches the packages to it.
+# It never creates or publishes a release by itself.
+name: Pacotes / Packages
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  linux:
+    # Ubuntu 22.04: o pacote usa a glibc dele, então roda também em sistemas mais novos.
+    # Ubuntu 22.04: the package uses its glibc, so it also runs on newer systems.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - name: Bibliotecas do sistema / System libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev libfuse2 xdg-utils file
+      - name: Dependências do Node / Node dependencies
+        run: |
+          (cd app && npm ci)
+          (cd extension && npm ci)
+      - name: Pacotes / Packages
+        working-directory: app
+        run: npx tauri build --bundles deb,rpm,appimage
+      - name: SHA-256
+        working-directory: target/release/bundle
+        run: |
+          mkdir -p ../../../dist-packages
+          cp deb/*.deb rpm/*.rpm appimage/*.AppImage ../../../dist-packages/
+          cd ../../../dist-packages
+          sha256sum * | tee SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sigilvault-linux
+          path: dist-packages/*
+          if-no-files-found: error
+      - name: Anexa à versão, se ela já existir / Attach to the release, if it already exists
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist-packages/* --clobber
+          else
+            echo "A versão $GITHUB_REF_NAME ainda não existe: os pacotes ficam só como artefatos. / Release $GITHUB_REF_NAME does not exist yet: packages stay as artifacts only."
+          fi
